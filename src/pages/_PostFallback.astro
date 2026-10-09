@@ -1,0 +1,171 @@
+---
+import type { CollectionEntry } from "astro:content";
+import Card from "@components/atoms/display/Card.svelte";
+import PostLanguageAlternates from "@components/molecules/PostLanguageAlternates.astro";
+import I18nKey from "@i18n/i18nKey";
+import { i18n } from "@i18n/translation";
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+import {
+	getPostLanguageAlternates,
+	listContentLanguageLabels,
+} from "@utils/content-utils";
+import {
+	type ContentLocale,
+	DEFAULT_LOCALE,
+	getPostLocale,
+	type PostLanguageVersion,
+} from "@utils/i18n-routing";
+import { isEncryptedPost } from "@utils/post-encryption";
+import { getPostUrl } from "@utils/url-utils";
+import { Icon } from "astro-icon/components";
+
+/**
+ * 语言回退桥接页（`_` 前缀 → 非路由）。
+ *
+ * 文章在当前页面语言下没有真实版本时（`languageScope: "all"` 混合列表
+ * 的跨语言卡片、或直接访问 `/zh/<en-only-slug>/`），由前缀详情路由的
+ * `fallback` 分支渲染本页，替代 404：
+ *
+ * - 页面外壳（顶栏、侧栏、文案）跟随**页面路由语言**——中间件已把
+ *   `locals.locale` 解析为该前缀语言，UI 不随原文语言跳变；
+ * - 正文标题/摘要按原文语言展示（`lang` 属性标给读屏与翻译工具）；
+ * - 「所有可用语言」复用 `PostLanguageAlternates`——原文自身语言排首位
+ *   （推荐阅读版本），其余真实版本随后；桥接页自身不进入互链列表；
+ * - 顶栏语言菜单把当前页面语言标为 `current`（URL 即桥接页自身），
+ *   点击其它条目跳到真实版本；
+ * - `pagefindIgnore`：桥接页与原文内容重复，整页排除出搜索索引。
+ *
+ * 由两个前缀路由对称消费：`zh/[...slug]` 承接缺 zh 版的默认语言文章，
+ * `posts/[...slug]` 承接缺默认语言版的前缀语言文章。
+ */
+interface Props {
+	entry: CollectionEntry<"posts">;
+}
+
+const { entry } = Astro.props;
+
+/** 本次页面渲染的 UI 语言（中间件按路径前缀解析；无上下文时退回默认语言）。 */
+const pageLocale: ContentLocale = Astro.locals.locale ?? DEFAULT_LOCALE;
+/** 原文自身的语言（桥接只发生在原文语言 ≠ 页面语言时）。 */
+const entryLocale = getPostLocale(entry.id);
+
+const labels = new Map(
+	listContentLanguageLabels().map(({ locale, label }) => [locale, label]),
+);
+const notice = i18n(I18nKey.postFallbackNotice).replace(
+	"{lang}",
+	labels.get(pageLocale) ?? String(pageLocale),
+);
+
+const isEncrypted = isEncryptedPost(entry.data);
+const description =
+	isEncrypted && entry.data.hideHomeContent
+		? i18n(I18nKey.postEncryptedSummary)
+		: entry.data.description;
+
+// 所有可用语言：原文自身版本（`getPostLanguageAlternates` 只返回其它版本）。
+const originalUrl = getPostUrl(entry);
+const others = await getPostLanguageAlternates(entry);
+const links = [
+	{
+		locale: entryLocale,
+		url: originalUrl,
+		label: labels.get(entryLocale) ?? String(entryLocale),
+	},
+	...others.map(({ locale, url }) => ({
+		locale,
+		url,
+		label: labels.get(locale) ?? String(locale),
+	})),
+];
+
+// 顶栏语言菜单：桥接页自身为当前条目，其余为真实版本（跨语言点击整页跳转）。
+const languageVersions: PostLanguageVersion[] = [
+	{ locale: pageLocale, url: Astro.url.pathname, current: true },
+	...links.map(({ locale, url }) => ({ locale, url })),
+];
+---
+
+<MainGridLayout
+	page="post"
+	title={entry.data.title}
+	description={notice}
+	languageVersions={languageVersions}
+	pagefindIgnore
+>
+	<div class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative mb-4">
+		<Card color="var(--card-bg)" radius="l" class="post-card z-10 px-6 md:px-9 py-8 relative w-full">
+			<article class="post-language-fallback onload-animation">
+				<p class="post-language-fallback__notice">
+					<span class="post-language-fallback__notice-icon" aria-hidden="true">
+						<Icon name="material-symbols:translate-rounded" />
+					</span>
+					{notice}
+				</p>
+				<h1 class="post-language-fallback__title" lang={entryLocale}>
+					<a href={originalUrl}>{entry.data.title}</a>
+				</h1>
+				{description && (
+					<p class="post-language-fallback__desc" lang={entryLocale}>
+						{description}
+					</p>
+				)}
+				<PostLanguageAlternates
+					alternates={links}
+					class="post-language-fallback__alternates onload-animation"
+				/>
+			</article>
+		</Card>
+	</div>
+</MainGridLayout>
+
+<style lang="stylus">
+.post-language-fallback
+	display: flex
+	flex-direction: column
+	align-items: flex-start
+	gap: var(--m3e-space-4)
+	padding: var(--m3e-space-2) 0
+
+	&__notice
+		display: inline-flex
+		align-items: center
+		gap: 0.5rem
+		margin: 0
+		padding: 0.375rem 0.875rem
+		border-radius: var(--shape-corner-full)
+		background: var(--secondary-container)
+		color: var(--on-secondary-container)
+		font: var(--m3e-type-label-large)
+
+	&__notice-icon
+		display: inline-flex
+		align-items: center
+		justify-content: center
+		flex: none
+		> :global(svg)
+			width: 1.125rem
+			height: 1.125rem
+
+	&__title
+		margin: 0
+		font: var(--m3e-type-headline-small)
+		color: var(--on-surface)
+
+		a
+			color: inherit
+			text-decoration: none
+			border-radius: var(--shape-corner-xs)
+			transition: color var(--m3e-duration-short) var(--m3e-easing-standard)
+			&:hover
+				color: var(--primary)
+			&:focus-visible
+				outline: 2px solid var(--primary)
+				outline-offset: 2px
+
+	&__desc
+		margin: 0
+		font: var(--m3e-type-body-large)
+		color: var(--on-surface-variant)
+		line-height: 1.6
+</style>

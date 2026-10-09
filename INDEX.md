@@ -21,7 +21,7 @@
 | --- | --- | --- |
 | 内容 | `src/content/`、`src/data/`、`public/images/` | 文章、说说、系列实体、站点数据实体与用户图片。默认随仓库维护；也可迁到独立内容仓库，构建前由 `pnpm content:sync` 物化到同样的路径。边界与双仓 CI 见 `docs/content-separation/README.md`。 |
 | 源码 | `src/` | 页面、布局、组件、Markdown 内容和运行时脚本。组件组合遵循 `atoms → molecules → organisms → layouts → pages`。 |
-| 配置 | `src/config/`、`src/types/`、`astro.config.mjs` | 设置站点 URL、`base` 路径、站点标识、语言、主题和功能开关。部署前优先检查 `src/config/siteConfig.ts` 与 `astro.config.mjs`。迁到独立内容仓后，这里仍是默认值与配置文档的真源，用户覆盖走内容仓 `config/*.yaml`，见 `docs/content-separation/config-overlay.md`。 |
+| 配置 | `src/config/`、`src/types/`、`astro.config.mjs` | 设置站点 URL、`base` 路径、站点标识、界面语言、内容多语言语言表、主题和功能开关。部署前优先检查 `src/config/siteConfig.ts` 与 `astro.config.mjs`。迁到独立内容仓后，这里仍是默认值与配置文档的真源，用户覆盖走内容仓 `config/*.yaml`，见 `docs/content-separation/config-overlay.md`。 |
 | 资产 | `src/assets/`、`public/images/`、`public/assets/` | 保存原始媒体，并在构建前生成可重复创建的响应式派生资源。目录边界见 `docs/asset-pipeline.md`。 |
 | 校验 | `rules/`、`tests/`、`scripts/` | 在发布前检查类型、Astro 产物、组件清单、无障碍和关键页面行为。 |
 | 构建 | `dist/`（生成目录） | `astro build` 生成的静态发布产物。不要手工编辑；每次发布都应从干净构建重新生成。 |

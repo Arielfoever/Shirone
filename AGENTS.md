@@ -30,6 +30,7 @@ Shirone is a blog theme built with Astro 7, Svelte 5, Tailwind 4, Stylus, and pn
 - `docs/markdown-on-demand-loading.md` — required before changing Markdown feature probes, conditional styles, runtime loading, or Swup resource lifecycles.
 - `docs/markdown-syntax-manifest.md` — required before adding, changing, or retiring custom author-facing Markdown syntax.
 - `docs/sidebar-system.md` — sidebar orchestration, page filtering, and Swup synchronization.
+- `docs/content-i18n.md` — content multi-language routing, request-time UI language resolution, home-list `languageScope`, and cross-language navigation; read before touching content routes, `i18n()` resolution, or the language menu.
 - `src/config/README.md` — required before changing configuration types or values.
 - `rules/ai-skills.md` — required before adding or changing AI skills or their packaging workflow.
 - `docs/npm-package-mode.md` — how the theme behaves when installed as the `shirones` package (config paths, content root, init).

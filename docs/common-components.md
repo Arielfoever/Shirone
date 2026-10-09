@@ -82,6 +82,7 @@
 | `SeriesCard` | 文章内系列块（系列名 + 第 N/共 M + 组内上一篇/下一篇，位置由 `seriesConfig.cardPosition` 决定）。分节语言与 `ArticleDiscovery` 一致：无容器背景/描边，lane 标题（图标 + 标题 + 横线 + 状态 pill），条目是整行状态层链接 |
 | `FloatingActionButton` | 右下角浮动操作按钮包装器（响应式设备类受控 + 页面范围过滤属性） |
 | `FloatingTOCPanel` | 移动端/平板浮动大纲目录卡片分子（M3 Surface Container High 风格、平滑滚动定位与隐藏滚动条） |
+| `PostLanguageAlternates` | 文章内语言互链（「本文还提供」标签 + 语言名 pill 链接；数据源 `getPostLanguageAlternates()`，无其它语言版本时调用方不渲染，页面零额外 DOM） |
 
 原子层通用件（`Button` / `Card` / `IconButton` / `Avatar` / `AccentBar` / `FAB` 等）见 `m3e-standard.md` §4。
 

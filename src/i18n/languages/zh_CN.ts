@@ -136,6 +136,11 @@ export const zh_CN: Translation = {
 	[Key.postRssEncryptedNotice]:
 		"本文已加密保护，请访问博客网站输入密码阅读全文。",
 
+	[Key.postAlsoAvailableIn]: "本文还提供：",
+	[Key.switchLanguage]: "切换语言",
+	[Key.postFallbackNotice]: "本文暂无{lang}版",
+	[Key.postLanguageOnlyBadge]: "仅有{lang}版",
+
 	[Key.imageViewer]: "图片查看器",
 	[Key.openImage]: "打开图片",
 	[Key.previousImage]: "上一张",

@@ -1,0 +1,27 @@
+---
+/**
+ * 首页文章列表模板——默认语言首页（`[...page]`）与前缀语言首页
+ * （`zh/[...slug]` 分页首项 → `/zh/`）共用的一份渲染，避免两处漂移。
+ *
+ * 只负责结构：PostPage 列表 + 分页器（动画延迟按列表长度错峰）。文案
+ * （空态、分页 aria）来自 `i18n()`，在各自页面的请求上下文中解析成该
+ * 页面语言，模板本身不携带任何语言常量。
+ */
+import Pagination from "@components/molecules/Pagination.astro";
+import PostPage from "@components/organisms/PostPage.astro";
+import type { CollectionEntry } from "astro:content";
+import type { Page } from "astro";
+import MainGridLayout from "./MainGridLayout.astro";
+
+interface Props {
+	page: Page<CollectionEntry<"posts">>;
+}
+
+const { page } = Astro.props;
+const len = page.data.length;
+---
+
+<MainGridLayout page="home">
+    <PostPage page={page}></PostPage>
+    <Pagination class="mx-auto onload-animation" page={page} style={`animation-delay: calc(var(--content-delay) + ${(len)*50}ms)`}></Pagination>
+</MainGridLayout>

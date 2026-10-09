@@ -3,6 +3,7 @@ import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import type { AstroIntegration } from "astro";
+import type { astroI18n as AstroI18nOption } from "../config/contentI18nConfig.ts";
 import {
 	expressiveCodeShared,
 	IMAGE_ENDPOINT_ROUTE,
@@ -167,6 +168,7 @@ export function shirones(options: ShironesOptions = {}): AstroIntegration {
 				command,
 				updateConfig,
 				injectRoute,
+				addMiddleware,
 				addWatchFile,
 				logger,
 			}) => {
@@ -266,6 +268,16 @@ export function shirones(options: ShironesOptions = {}): AstroIntegration {
 					c: unknown,
 				) => unknown;
 
+				// 内容语言表是用户可编辑的站点选择（决定展示哪些语言），必须走
+				// loadConfigModule 才能看到包模式 shirones/config/ 下的同名覆盖。
+				// 静态 import 会把包内置值打进 dist/index.js，注入的 i18n.locales
+				// 就会与按同一张表生成的 [locale] 路由各说各话（split-brain）。
+				const contentI18nModule = await loadConfigModule(
+					paths,
+					"contentI18nConfig",
+					registryRef,
+				);
+
 				const musicWidgetEnabled = Boolean(
 					sidebarConfig?.enable &&
 						sidebarConfig.components?.some(
@@ -329,6 +341,12 @@ export function shirones(options: ShironesOptions = {}): AstroIntegration {
 					...(siteConfig?.site ? { site: siteConfig.site } : {}),
 					base: siteConfig?.base ?? "/",
 					trailingSlash: TRAILING_SLASH,
+					// 内容语言路由（默认语言无前缀，其余走 /zh/…）。值来自
+					// contentI18nConfig#contentI18n 的派生 astroI18n（经上面的
+					// loadConfigModule 装载，用户覆盖才生效），语义见
+					// src/utils/i18n-routing.ts。类型侧仍引用同一份显式形状注解
+					//（type-only import，构建期擦除，不产生第二份运行时值）。
+					i18n: contentI18nModule.astroI18n as typeof AstroI18nOption,
 					image: { endpoint: { route: IMAGE_ENDPOINT_ROUTE } },
 					fonts: fonts as never,
 					integrations,
@@ -389,6 +407,18 @@ export function shirones(options: ShironesOptions = {}): AstroIntegration {
 				});
 
 				// ── 7. Inject the theme's routes ────────────────────────────────
+				if (!paths.isThemeRepo) {
+					// 包模式没有「用户 srcDir 下的 src/middleware.ts」这条 Astro 自动
+					// 发现约定，主题的内容语言中间件必须显式注册。`order: "pre"`
+					// 让它先于用户中间件运行：`locals.locale` 和非规范语言前缀的
+					// 308 归一属于请求契约，要在任何业务逻辑之前确定。
+					// entrypoint 指向 utils——该目录随包发布（顶层文件不保证），
+					// 主题仓则由 `<srcDir>/middleware.ts` 自动发现同一份实现。
+					addMiddleware({
+						entrypoint: join(paths.packageSrc, "utils/middleware.ts"),
+						order: "pre",
+					});
+				}
 				if (!paths.isThemeRepo && options.injectRoutes !== false) {
 					const routes = filterRoutes(
 						collectRoutes(join(paths.packageSrc, "pages")),

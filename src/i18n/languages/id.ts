@@ -147,6 +147,11 @@ export const id: Translation = {
 	[Key.postRssEncryptedNotice]:
 		"Artikel ini dienkripsi. Silakan kunjungi situs web untuk membaca.",
 
+	[Key.postAlsoAvailableIn]: "Juga tersedia dalam: ",
+	[Key.switchLanguage]: "Ganti bahasa",
+	[Key.postFallbackNotice]: "Artikel ini tidak tersedia dalam {lang}",
+	[Key.postLanguageOnlyBadge]: "Hanya {lang}",
+
 	[Key.imageViewer]: "Penampil gambar",
 	[Key.openImage]: "Buka gambar",
 	[Key.previousImage]: "Gambar sebelumnya",

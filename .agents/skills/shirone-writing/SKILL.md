@@ -53,6 +53,23 @@ hideHomeContent: true   # 加密内容在首页隐藏(默认 true)
 - 未知 slug 静默容忍，不产生死链、不阻断构建，每个未知 slug 仅在构建日志打印一次 `[series] ...` 警告。
 - 站内入口为 `/series/`（每系列一张卡片的索引）与 `/series/<slug>/`（系列总览 + 有序文章列表）。
 
+## 多语言文章（语言配对）
+
+同一篇文章的各语言版本共享同一个无前缀 slug；站上展示哪些内容语言由
+`src/config/contentI18nConfig.ts` 的语言表决定（增删语言只改那张表，见
+`docs/content-i18n.md` §8）。按需选择一种文件布局（以 en / zh-CN 为例）：
+
+- **平铺单文件**：`foo.md`（默认语言 en）、`foo.zh-CN.md`（zh-CN）；
+- **目录内配对**（适合带同目录资源）：`foo/index.en.md` + `foo/index.zh-CN.md`。
+
+规则与效果：
+
+- 各版本 URL 分别为默认语言 `/posts/foo/`、前缀语言 `/<route>/<foo>/`（`route` 是语言表条目的路由段，如 zh-CN → `/zh/foo/`），前端自动互链（文章内「本文还提供」与顶栏语言菜单）；页面 UI 文案跟随各自页面语言。
+- 各版本 frontmatter 独立维护（`title`/`description` 等各自翻译），`published` 建议保持一致以便跨语言同序。
+- 只有单语言版本的文章在另一种语言的首页是否出现由 `postListConfig.languageScope` 决定（默认不出现；`"all"` 时以现有版本显示并带 endonym 语言徽标，卡片与详情链接指向当前语言前缀下的桥接页（列出所有可用语言），读者再自选版本，见 `shirone-config` 与 `docs/content-i18n.md` §6/§6a）。
+- 脚手架 `pnpm.cmd new-post` 只生成默认语言单文件，配对文件手动创建。
+- 完整路由与验证契约见 `docs/content-i18n.md`。
+
 ## 动态(moments)frontmatter
 
 `published`(必填)、`pinned`、`location`、`mood`(Iconify 图标名,如 `material-symbols:sentiment-excited-outline-rounded`)、`tags: []`、`images: [{src, alt}]`、`draft`。

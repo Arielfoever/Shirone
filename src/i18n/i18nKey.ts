@@ -135,6 +135,17 @@ enum I18nKey {
 	postEncryptedBadge = "postEncryptedBadge",
 	postRssEncryptedNotice = "postRssEncryptedNotice",
 
+	// 文章语言互链（「本文还提供」区块）与顶栏语言菜单
+	// 语言名 endonym（English / 简体中文）不占 i18n key：语言自称不随站点
+	// UI 语言翻译，由 contentI18n.locales[].label 直供（config/contentI18nConfig）。
+	postAlsoAvailableIn = "postAlsoAvailableIn",
+	switchLanguage = "switchLanguage",
+	// 语言回退（桥接页）：缺当前页面语言版本的文章在该语言 URL 下渲染的
+	// 提示文案，{lang} = 当前页面语言的 endonym（由消费方替换）。
+	postFallbackNotice = "postFallbackNotice",
+	// 混合列表卡片的语言徽标 title：{lang} = 该文章自身语言的 endonym。
+	postLanguageOnlyBadge = "postLanguageOnlyBadge",
+
 	imageViewer = "imageViewer",
 	openImage = "openImage",
 	previousImage = "previousImage",

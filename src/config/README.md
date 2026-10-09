@@ -24,7 +24,11 @@
 5. **`integrationsConfig.ts` 是上述规则的例外**：它被 `src/integration/index.ts`
    按相对路径导入，且**禁止走 barrel**。原因见该文件头部注释——barrel 不会
    拷进用户项目，而包模式必须在构建期把它静态打进 bundle。它的 `import type`
-   全部在编译期擦除，不产生运行时依赖。
+   全部在编译期擦除，不产生运行时依赖。**例外只限集成选项**：任何用户需要
+   改的站点选择（如内容语言表 `contentI18nConfig.ts`）必须留在常规可覆盖
+   模块里——曾与集成选项同放 `integrationsConfig.ts` 的语言表因此迁出，
+   否则包模式用户永远改不到它（split-brain）。`src/integration/index.ts`
+   对它的消费也改走 `loadConfigModule()`（用户文件优先）。
 
 ## 配置（Behavior）与数据（Content）分层原则
 
@@ -48,8 +52,11 @@ Shirone 遵循「配置管行为，数据管内容」的清晰分层架构：
    包住默认值字面量，并在 `scripts/content/config-domains.mjs` 登记该领域（见下文「用户覆盖层」）；
 4. **安全默认与零额外负担**：可选外部服务/重量级特性默认必须为关闭（如 `enable: false`）。在关闭或未配置时，必须满足「零外部请求、零占位 DOM、零性能损耗、零主包膨胀」的零额外负担要求；
    落地做法与验证方法见 `docs/on-demand-loading.md`；
-5. UI 文案走 `I18nKey` 枚举 + `i18n()`（如 `navBarConfig` 的用法），**不写死字符串**；
-   新增 i18n key 必须同步补全 `src/i18n/languages/` 下全部 10 种语言；
+5. UI 文案走 `I18nKey` 枚举 + `i18n()`，**不写死字符串**；`i18n()` 语言跟随
+   请求上下文（解析链见 `src/i18n/AGENTS.md`），模块顶层（配置求值期）
+   **不要**调用它——那会把文案冻在当时的语言上，需要延迟的场景存
+   `"$t:<key>"` 引用、渲染期用 `resolveI18nText()` 解析（`navBarConfig`
+   即此模式）；新增 i18n key 必须同步补全 `src/i18n/languages/` 下全部 10 种语言；
 6. 跑 `npx.cmd astro check` 确认 0 错误 0 警告。
 
 ## 用户覆盖层（内容仓 `config/*.yaml`）
@@ -77,8 +84,11 @@ export const siteConfig: SiteConfig = withUserConfig("site", {
 会检查登记表的文件名唯一且为 kebab-case。
 
 `navBarConfig` 是唯一不走 `withUserConfig()` 的领域：导航项要引用 `LinkPresets`
-并调用 `i18n()`，深合并只会得到一堆未解析的引用，因此它由 `resolveNavBarLinks()`
-把内容仓的声明式条目还原成 `NavBarLink`。
+且 `name` 存 `"$t:<key>"` 惰性引用（模块顶层立即调 `i18n()` 会把文案冻在
+加载期语言上，词条由 TopAppBar / SiteNavigationDrawer 在渲染期
+`resolveI18nText()` 解析，跟随页面语言），深合并只会得到一堆未解析的引用，
+因此它由 `resolveNavBarLinks()` 把内容仓的声明式条目还原成 `NavBarLink`
+（只做 `$t:` 词条校验，不求值）。
 
 `config/nav-bar.yaml` 是**整体替换**，不会跟着各功能的 `enable` 走，因此
 `navBarConfig` 在任何来源的条目汇合后都会过一遍 `pruneUnavailableNavLinks()`
@@ -120,11 +130,12 @@ export const siteConfig: SiteConfig = withUserConfig("site", {
 | `fabConfig.ts` | 右下角悬浮控制流（FAB）配置：总开关、各操作项（返回顶部、悬浮目录、直达评论、返回首页、自定义操作）、细粒度设备受控矩阵（`devices?: ("mobile" | "tablet" | "desktop")[]`）、页面范围过滤与图标定制；架构见 `docs/fab-system.md` |
 | `announcementConfig.ts` | 公告内容（侧栏 announcement widget 消费，text 为空不渲染） |
 | `musicConfig.ts` | 侧栏音乐全局配置：总开关（默认关闭）、`provider` 模式切换接口、`defaultVolume` 初始音量与 `defaultMode` 初始播放模式（本地曲目清单维护在 `src/data/music.ts`）；与 `sidebarConfig` 的 music 条目共同控制 `MusicSidebar`，详见下文与 `docs/sidebar-widgets.md` |
-| `postListConfig.ts` | 文章列表：分页大小 + 布局（list/grid 模式、封面位置、grid 卡片宽度档位） |
+| `postListConfig.ts` | 文章列表：分页大小、布局（list/grid 模式、封面位置、grid 卡片宽度档位）、首页多语言范围 `languageScope`（`"language"` 默认只列当前语言文章；`"all"` 列出全部文章组——无当前语言版本时以默认语言版本显示，卡片链接始终为页面语言前缀（跨语言代表链到桥接页），仅首页生效，归档/分类/标签/feed 的按语言过滤口径不变；架构与验证见 `docs/content-i18n.md` §6/§6a）与跨语言卡片语言徽标 `languageFallbackBadge`（默认开启，关闭后跨语言卡片仍链桥接页、只是不渲染徽标） |
 | `articleConfig.ts` | 文章详情：最后更新提示、延伸阅读（相关/随机文章抽样）、以及文章尾部分享区块（总开关、海报生成与封面配置） |
 | `commentConfig.ts` | 评论系统：全局开关（默认关闭）、Provider 选择（Twikoo / Giscus）、视口懒加载与服务凭据配置；Giscus 基于 GitHub Discussions（需公开仓库 + 安装 giscus App + 从 giscus.app 取 repoId/categoryId），主题明暗双值跟随站点切换 |
 | `contextMenuConfig.ts` | 桌面端右键增强：可选开关（当前默认开启）；配置允许页面与操作顺序，关闭时零 DOM、零监听器、零客户端资源 |
 | `umamiConfig.ts` | Umami 统计：全局开关（默认关闭）、公开分享统计读取，以及可选的官方访问采集脚本配置；支持内容仓 `config/umami.yaml` 覆盖（领域键 `umami`） |
+| `contentI18nConfig.ts` | 内容多语言语言表（`contentI18n`：内容语言 ↔ URL 路由段 ↔ endonym 展示标签，含派生的 `astroI18n`）；数组顺序即语言菜单顺序，增删语言只改此表，写错形态由 `validateContentI18n()` fail-fast；架构见 `docs/content-i18n.md`。**不走 `withUserConfig()`**：语言表是路由与集合 id 的结构性输入，需保留 `as const` 字面量类型，走常规文件级覆盖（包模式 `shirones/config/contentI18nConfig.ts`） |
 | `integrationsConfig.ts` | 所有模式（源码仓 + npm 包项目）共用的集成选项，唯一装载入口是 `src/integration/index.ts`：swup / astro-icon / expressive-code / svelte / mdx 的选项、`vite.build` 共用部分、`trailingSlash` 与 `image.endpoint.route` 的配对、音乐侧栏虚拟模块 id。**本目录里唯一的例外**：不走 barrel、不经 `withUserConfig`、也不被 `loadConfigModule` 动态加载（包模式在构建期把它打进 `dist/index.js`），所以它没有用户覆盖层，用户项目里的那份拷贝是死的 |
 | `sitemapFilter.ts` | 由 `*Config.enable === false` 推导被关闭的页面清单，供 `sitemap()` 的 `filter` 排除它们。包模式通过 `loadConfigModule` 加载，用户可自行覆盖 |
 | `skillsConfig.ts` | 技能页行为控制：页面总开关、分类清单与单项禁用列表（技能内容维护在 `src/data/skills.ts`）；关闭页面时导航入口同步隐藏 |

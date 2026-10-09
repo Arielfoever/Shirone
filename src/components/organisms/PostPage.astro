@@ -1,6 +1,10 @@
 ---
 import type { CollectionEntry } from "astro:content";
-import { getPostUrl } from "@utils/url-utils";
+import I18nKey from "@i18n/i18nKey";
+import { i18n } from "@i18n/translation";
+import { listContentLanguageLabels } from "@utils/content-utils";
+import { getPostLocale, resolveRequestLocale } from "@utils/i18n-routing";
+import { getPostUrl, getPostUrlBySlug } from "@utils/url-utils";
 import { POST_CARD_MIN_WIDTH, postListConfig } from "@/config/postListConfig";
 import PostCard from "./PostCard.astro";
 
@@ -10,6 +14,55 @@ let delay = 0;
 const interval = 50;
 
 const { mode, cover, cardWidth } = postListConfig.layout;
+
+/**
+ * 页面语言（请求上下文解析；`HomeList` 只被首页路由消费，前缀即语言）。
+ * 混合列表（languageScope: "all"）的卡片链接与语言徽标都以它为基准：
+ * 有当前语言版本时链真实版本，缺失时链同前缀的语言回退桥接页——列表
+ * 的界面语言与点击后的页面语言始终一致，顶栏不随卡片内容语言跳变。
+ */
+const pageLocale = resolveRequestLocale(Astro.url.pathname).locale;
+/** 徽标语典（endonym，各 locale 同值）；配置关闭时完全不渲染 DOM。 */
+const languageLabels = postListConfig.languageFallbackBadge
+	? new Map(
+			listContentLanguageLabels().map(({ locale, label }) => [locale, label]),
+		)
+	: null;
+
+/**
+ * 卡片装配：链接一律指向页面语言前缀——有当前语言版本时链真实版本
+ * （getPostUrl 顺带尊重 permalink/alias），缺失时链同前缀的语言回退
+ * 桥接页；跨语言卡片同时携带语言徽标（配置关闭时为 undefined，
+ * atom 不渲染任何 DOM）。
+ */
+const cards: {
+	entry: CollectionEntry<"posts">;
+	url: string;
+	languageBadge?: { label: string; title: string };
+}[] = page.data.map((entry: CollectionEntry<"posts">) => {
+	const entryLocale = getPostLocale(entry.id);
+	const sameLocale = entryLocale === pageLocale;
+	const badgeLabel =
+		sameLocale || !languageLabels
+			? undefined
+			: (languageLabels.get(entryLocale) ?? String(entryLocale));
+	return {
+		entry,
+		url: sameLocale
+			? getPostUrl(entry)
+			: getPostUrlBySlug(entry.id, pageLocale),
+		languageBadge:
+			badgeLabel !== undefined
+				? {
+						label: badgeLabel,
+						title: i18n(I18nKey.postLanguageOnlyBadge).replace(
+							"{lang}",
+							badgeLabel,
+						),
+					}
+				: undefined,
+	};
+});
 ---
 
 <!-- 卡片间留白分隔（gap = --m3e-space-4，无容器底色 / 无虚线）。
@@ -26,7 +79,7 @@ const { mode, cover, cardWidth } = postListConfig.layout;
         data-layout-mode={mode}
         style={`--post-card-min: ${POST_CARD_MIN_WIDTH[cardWidth]};`}
     >
-        {page.data.map((entry: CollectionEntry<"posts">) => (
+        {cards.map(({ entry, url, languageBadge }) => (
             <PostCard
                 entry={entry}
                 title={entry.data.title}
@@ -35,10 +88,11 @@ const { mode, cover, cardWidth } = postListConfig.layout;
                 published={entry.data.published}
                 updated={entry.data.updated}
                 pinned={entry.data.pinned}
-                url={getPostUrl(entry)}
+                url={url}
                 image={entry.data.image}
                 description={entry.data.description}
                 draft={entry.data.draft}
+                languageBadge={languageBadge}
                 class:list="onload-animation"
                 style={`animation-delay: calc(var(--content-delay) + ${delay++ * interval}ms);`}
             ></PostCard>

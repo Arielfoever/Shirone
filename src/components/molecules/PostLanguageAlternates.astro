@@ -1,0 +1,109 @@
+---
+import I18nKey from "@i18n/i18nKey";
+import { i18n } from "@i18n/translation";
+import { Icon } from "astro-icon/components";
+
+/**
+ * 一条语言版本链接：语言名（endonym）+ 目标 URL。
+ * 数据源 `getPostLanguageAlternates()`（`@utils/content-utils`），
+ * 组件自身不查集合，只负责呈现（molecules 层职责边界）。
+ */
+export type PostAlternateLink = {
+	/** 目标内容语言，写进 `hreflang`/`lang` 供爬虫与读屏正确发音。 */
+	locale: string;
+	/** 该语言版本的站内 URL（已含 base 与语言前缀）。 */
+	url: string;
+	/** 链接可见文案：语言名。 */
+	label: string;
+};
+
+interface Props {
+	/** 只含**其它**语言；空数组时调用方不应渲染本组件。 */
+	alternates: PostAlternateLink[];
+	class?: string;
+}
+
+const { alternates, class: className = "" } = Astro.props;
+const label = i18n(I18nKey.postAlsoAvailableIn);
+---
+
+<nav
+	class={`post-language-alternates${className ? ` ${className}` : ""}`}
+	aria-label={label.replace(/[:：\s]+$/, "")}
+>
+	<span class="post-language-alternates__icon" aria-hidden="true">
+		<Icon name="material-symbols:translate-rounded" />
+	</span>
+	<span class="post-language-alternates__label">{label}</span>
+	<ul class="post-language-alternates__list">
+		{
+			alternates.map((alternate) => (
+				<li class="post-language-alternates__item">
+					<a
+						class="post-language-alternates__link m3-state-layer"
+						href={alternate.url}
+						hreflang={alternate.locale}
+						lang={alternate.locale}
+					>
+						{alternate.label}
+					</a>
+				</li>
+			))
+		}
+	</ul>
+</nav>
+
+<style lang="stylus">
+.post-language-alternates
+	display: flex
+	flex-wrap: wrap
+	align-items: center
+	gap: 0.5rem 0.75rem
+	padding: 0.75rem 1rem
+	border-radius: var(--shape-corner-m)
+	background: var(--surface-container-high)
+	color: var(--on-surface-variant)
+	font: var(--m3e-type-body-medium)
+
+	&__icon
+		display: flex
+		align-items: center
+		justify-content: center
+		flex: none
+		width: 1.75rem
+		height: 1.75rem
+		border-radius: var(--shape-corner-s)
+		background: var(--btn-regular-bg)
+		color: var(--primary)
+
+		:global(svg)
+			width: 1.125rem
+			height: 1.125rem
+
+	&__label
+		color: var(--on-surface)
+		overflow-wrap: anywhere
+
+	&__list
+		display: flex
+		flex-wrap: wrap
+		gap: 0.5rem
+		margin: 0
+		padding: 0
+		list-style: none
+
+	&__item
+		display: flex
+		margin: 0
+
+	&__link
+		display: inline-flex
+		align-items: center
+		padding: 0.25rem 0.75rem
+		border-radius: var(--shape-corner-full)
+		background: var(--btn-regular-bg)
+		color: var(--btn-content)
+		font: var(--m3e-type-label-medium)
+		text-decoration: none
+		--m3e-state-color: var(--btn-content)
+</style>

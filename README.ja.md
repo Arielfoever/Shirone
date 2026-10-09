@@ -64,6 +64,7 @@ Shirone は Astro 7、Svelte 5、Tailwind CSS 4、Stylus で構築された静�
 - 目次、関連記事、共有、記事暗号化、任意のコメント機能
 - アーカイブ、カテゴリー、タグ、リンク、モーメント、アニメ、アルバム、プロジェクト、スキル、デバイス、ゲーム、シリーズ、タイムラインの各ページ
 - 10 種類の UI 言語を内蔵
+- 設定駆動の多言語コンテンツ：言語テーブル 1 つでルート・言語メニュー・バッジ・ブリッジページを制御
 - SSR 優先、キーボード操作への配慮、アクセシビリティテスト
 - 任意機能はゼロ負担を原則とし、無効時には外部リクエスト、DOM、レイアウトシフト、メインバンドルへのコード追加が発生しません
 
@@ -127,6 +128,7 @@ Shirone ではテーマのソースコード、個人サイトのコンテンツ
 | ファイル | 用途 |
 | --- | --- |
 | `src/config/siteConfig.ts` | サイト URL、識別情報、言語、動的配色、バナー、テクスチャ、目次、表示設定 |
+| `src/config/contentI18nConfig.ts` | コンテンツ多言語テーブル（デフォルト言語と各言語のルート・ラベル） |
 | `src/config/profileConfig.ts` | 作者プロフィールとソーシャルリンク |
 | `src/config/navBarConfig.ts` | メインナビゲーション |
 | `src/config/sidebarConfig.ts` | サイドバー構成、ウィジェット、ページフィルター |
@@ -193,6 +195,7 @@ pnpm build
 - [`docs/atomic-structure.md`](./docs/atomic-structure.md) - コンポーネント階層と依存ルール
 - [`docs/markdown-extensions.md`](./docs/markdown-extensions.md) - Markdown プラグイン、スタイル、キャッシュ、テスト規約
 - [`docs/sidebar-system.md`](./docs/sidebar-system.md) - サイドバー構成と Swup 同期
+- [`docs/content-i18n.md`](./docs/content-i18n.md) - コンテンツ多言語ルーティング、UI 言語解決、言語間ナビゲーション
 - [`docs/on-demand-loading.md`](./docs/on-demand-loading.md) - 任意機能のゼロ負担実装
 - [`docs/font-system.md`](./docs/font-system.md) - フォント設定と本番用サブセット化
 

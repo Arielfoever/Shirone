@@ -33,6 +33,11 @@ interface Props {
 	tags?: BlogMetaLink[];
 	/** 字数展示文本（如 "1426 words"，渲染在分类右侧） */
 	wordCount?: string;
+	/**
+	 * 语言徽标（混合列表缺当前页面语言版本的卡片）：`label` 为该文章
+	 * 自身语言的 endonym（可见文本），`title` 为消费方已参数化的提示。
+	 */
+	languageBadge?: { label: string; title: string };
 	class?: string;
 	style?: string;
 }
@@ -55,6 +60,7 @@ const {
 	category = null,
 	tags = [],
 	wordCount,
+	languageBadge,
 	class: className,
 	style,
 } = Astro.props;
@@ -62,10 +68,11 @@ const {
 const hasCover = !!image;
 const pinnedLabel = i18n(I18nKey.pinned);
 const encryptedLabel = i18n(I18nKey.postEncryptedBadge);
-/* 置顶 + 加密并存时合入可访问名称，避免屏幕阅读器丢失任一状态 */
+/* 置顶 + 加密 + 语言徽标并存时合入可访问名称，避免屏幕阅读器丢失任一状态 */
 const stateLabels = [
 	pinned ? pinnedLabel : "",
 	encrypted ? encryptedLabel : "",
+	languageBadge ? languageBadge.title : "",
 ].filter(Boolean);
 const titleLabel =
 	stateLabels.length > 0 ? `${title}, ${stateLabels.join(", ")}` : title;
@@ -105,6 +112,16 @@ const titleLabel =
 				</span>
 			)}
 			{title}
+			{languageBadge && (
+				<span
+					class="m3-blog-postcard__lang"
+					aria-hidden="true"
+					title={languageBadge.title}
+				>
+					<Icon name="material-symbols:translate-rounded" />
+					{languageBadge.label}
+				</span>
+			)}
 			<Icon class="m3-blog-postcard__arrow" name="material-symbols:chevron-right-rounded" />
 		</a>
 		{published && (
@@ -231,6 +248,24 @@ const titleLabel =
 		> :global(svg)
 			width: 1.125rem
 			height: 1.125rem
+
+	/* 语言徽标：混合列表中缺当前页面语言版本的卡片，endonym 文本胶囊
+	   （secondary 容器色，与 pin/加密图标徽标同高，不参与 hover 变化） */
+	&__lang
+		display: inline-flex
+		align-items: center
+		gap: 0.25rem
+		flex: none
+		height: 1.75rem
+		padding: 0 0.625rem
+		border-radius: var(--shape-corner-m)
+		background: var(--secondary-container)
+		color: var(--on-secondary-container)
+		font: var(--m3e-type-label-medium)
+		white-space: nowrap
+		> :global(svg)
+			width: 1rem
+			height: 1rem
 
 	/* 置顶 + 加密角标：tertiary 小锁圆点叠加在 pin 徽标右上角（BadgedBox 语言），
 	   带卡片色描边与背景分离，整体宽度与单 pin 徽标一致 */

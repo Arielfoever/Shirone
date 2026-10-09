@@ -1,0 +1,134 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { getSortedPostsForHome } from "@utils/content-utils";
+import {
+	CONTENT_LOCALES,
+	type ContentLocale,
+	DEFAULT_LOCALE,
+	routeSegmentFor,
+} from "@utils/i18n-routing";
+import {
+	buildListPagePaths,
+	collectPostRoutePaths,
+	type PostRoutePath,
+	type PostRouteProps,
+	toSlugPaths,
+	withFallbackSlugs,
+} from "@utils/post-routes";
+import type { GetStaticPaths, Page } from "astro";
+import { postListConfig } from "@/config/postListConfig";
+import HomeList from "../../layouts/HomeList.astro";
+import PostDetail from "../_PostDetail.astro";
+import PostFallback from "../_PostFallback.astro";
+
+/**
+ * 前缀语言路由：`/<route>/<slug>/` 与该语言的列表页，按 `contentI18n.locales`
+ * 逐条产出——**一个文件承接全部非默认语言**，增删语言只改配置，不再需要
+ * 在 `src/pages/` 下新建同形目录（旧实现是 `zh/[...slug].astro` 目录写死）。
+ *
+ * `locale` 动态段的取值 = 语言表里的路由段（`route`）；同一 rest 键 `slug`
+ * 承接三类参数值：
+ *
+ * - 文章段 slug（与默认语言的 `/posts/<slug>/` 同源，见 `postPathFor`）；
+ *   其它语言独有的文章也产出本前缀下的桥接页（`fallback: true`，
+ *   渲染 `_PostFallback` 而不是 404），保证混合列表的跨语言卡片留在
+ *   当前语言语境；
+ * - 站根级 permalink（frontmatter 或全局模板产物，默认语言由根
+ *   `[...permalink]` 承接，这里落在前缀之下）——无回退形态，保持 404；
+ * - **列表页分页**：`buildListPagePaths()`（Astro paginate 的页码参数名
+ *   硬编码为 `page`，与 `slug` 冲突，故按其源码手写同形 Page）产出
+ *   `/<route>/`（第 1 页，参数值缺省）与 `/<route>/2/`……——与根
+ *   `[...page]` 对称，只是数据源换成该语言的文章。
+ *
+ * 文章与 permalink 的参数值由 `toSlugPaths` 按值去重；页码值恰与某个
+ * 文章 slug / permalink 撞车时**文章优先**（与 `toSlugPaths` 首条优先
+ * 的语义一致），分页项让位过滤，避免同路径产出两份竞争页面。
+ *
+ * dev 下未产出的首段（如根分页 `/2/`、未知 slug）由 Astro 按
+ * `matchAllRoutes` 依次尝试：本路由的 getStaticPaths 不含该路径时抛
+ * `NoMatchingStaticPathFound`，落到更后面 `[...page]` / `[...permalink]`
+ * 去接（见 astro/dist/core/routing/dev.js），不会被本动态段截胡。
+ * 语言表里删掉某条目时，该路由段整体不产出页面（首段无路径 → 同样
+ * 穿透到 404），而不是把默认语言内容塞进旧前缀。
+ */
+export const getStaticPaths = (async () => {
+	// 各语言的路径装配按语言各算一次（3+ 语言时避免 N² 重复收集）。
+	const collected = new Map<
+		ContentLocale,
+		Awaited<ReturnType<typeof collectPostRoutePaths>>
+	>();
+	const collectOnce = async (locale: ContentLocale) => {
+		const hit = collected.get(locale);
+		if (hit) return hit;
+		const value = await collectPostRoutePaths(locale);
+		collected.set(locale, value);
+		return value;
+	};
+
+	const paths: {
+		params: { locale: string; slug?: string };
+		props: PostRouteProps | { page: Page<CollectionEntry<"posts">> };
+	}[] = [];
+
+	for (const locale of CONTENT_LOCALES) {
+		if (locale === DEFAULT_LOCALE) continue;
+		const segment = routeSegmentFor(locale);
+
+		const own = await collectOnce(locale);
+		// 语言回退：**其它语言**（含默认语言）独有的文章在本前缀下渲染
+		// 桥接页（真实版本优先，见 withFallbackSlugs），混合列表卡片因此
+		// 不必跨语言跳出。多语言并集的同名 slug 按语言表顺序首条优先。
+		const fallbackSlugs: PostRoutePath[] = [];
+		for (const other of CONTENT_LOCALES) {
+			if (other === locale) continue;
+			fallbackSlugs.push(...(await collectOnce(other)).slugs);
+		}
+		const postPaths = toSlugPaths(
+			withFallbackSlugs([...own.slugs, ...own.permalinks], fallbackSlugs),
+		);
+
+		// 分页不能走 Astro paginate()：它的页码参数名硬编码为 `page`，与本
+		// 路由的 `slug` rest 键冲突。buildListPagePaths 按 paginate 源码复刻
+		// 同形的 Page 对象（见 post-routes.ts）。数据源的语言范围由
+		// postListConfig.languageScope 决定（默认 language = 只列本语言）。
+		const listPaths = buildListPagePaths(
+			await getSortedPostsForHome(locale),
+			locale,
+			postListConfig.pageSize,
+		);
+		// 页码值与文章 slug/permalink 撞车时文章优先（同 toSlugPaths 首条
+		// 优先语义），分页项让位过滤，避免同路径产出两份竞争页面。
+		const postValues = new Set(postPaths.map((path) => path.params.slug ?? ""));
+		const filteredListPaths = listPaths.filter(
+			(path) =>
+				path.params.slug === undefined || !postValues.has(path.params.slug),
+		);
+
+		paths.push(
+			...[...postPaths, ...filteredListPaths].map((path) => ({
+				params: { ...path.params, locale: segment },
+				props: path.props,
+			})),
+		);
+	}
+
+	return paths;
+}) satisfies GetStaticPaths;
+
+// 分流：带 entry 的是文章详情（PostRouteProps；`fallback` 标记 → 桥接页），
+// 带 page 的是列表分页。语言本身不进 props——条目 id 与 URL 前缀已足够。
+type RoutedProps = Partial<PostRouteProps> & {
+	page?: Page<CollectionEntry<"posts">>;
+};
+const { entry, page, fallback } = Astro.props as RoutedProps;
+---
+
+{entry ? (
+	fallback ? (
+		<PostFallback entry={entry} />
+	) : (
+		<PostDetail {...(Astro.props as PostRouteProps)} />
+	)
+) : (
+	page && <HomeList page={page} />
+)}

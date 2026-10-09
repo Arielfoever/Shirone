@@ -2,10 +2,17 @@ import type { PostCardWidth, PostListConfig } from "@/types/postListConfig";
 import { withUserConfig } from "../utils/config-overlay.ts";
 
 /**
- * 文章列表页配置：分页大小与排版布局。
+ * 文章列表页配置：分页大小、排版布局与首页多语言范围。
  *
  * 【核心配置项】
  * - pageSize：每页展示的文章数量（默认 8 篇）；
+ * - languageScope：首页列表的多语言范围（类型注释见 types/postListConfig.ts）：
+ *   - "language"（默认）：只渲染当前页面语言的文章；
+ *   - "all"：渲染全部文章组——卡片链接一律指向页面语言前缀下的路径，
+ *     无当前语言版本时由语言回退桥接页承接（提示 + 语言互链）。仅影响
+ *     首页，归档/分类/标签/feed 的按语言过滤口径不变；
+ * - languageFallbackBadge：混合列表中缺当前语言版本的卡片是否渲染语言
+ *   徽标（默认 true；false = 完全不渲染）；
  * - layout：
  *   - mode："list"（经典纵向列表）| "grid"（双列/三列卡片网格）；
  *   - cover："left"（封面在左）| "right"（封面在右，默认）；
@@ -20,6 +27,8 @@ import { withUserConfig } from "../utils/config-overlay.ts";
  */
 export const postListConfig: PostListConfig = withUserConfig("postList", {
 	pageSize: 8,
+	languageScope: "all",
+	languageFallbackBadge: true,
 	layout: {
 		mode: "list",
 		cover: "right",
@@ -28,8 +37,8 @@ export const postListConfig: PostListConfig = withUserConfig("postList", {
 });
 
 /** grid 档位 → 卡片最小宽度（--post-card-min 预设，与 shape/type 分档哲学同构）。
-    页面框架 90rem：regular 24rem 保证宽屏为 2 列大卡（3 列窄卡会让
-    日期/分类/字数元信息行换行），compact 才给密排选项。 */
+	页面框架 90rem：regular 24rem 保证宽屏为 2 列大卡（3 列窄卡会让
+	日期/分类/字数元信息行换行），compact 才给密排选项。 */
 export const POST_CARD_MIN_WIDTH: Record<PostCardWidth, string> = {
 	compact: "20rem",
 	regular: "24rem",

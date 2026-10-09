@@ -46,6 +46,11 @@ import type icon from "astro-icon";
  */
 export const TRAILING_SLASH = "always";
 
+// 内容 i18n 语言表（`contentI18n`）与它派生的 `astroI18n` 已迁至
+// `src/config/contentI18nConfig.ts`：它们是用户可编辑的站点选择，必须落在
+// 有覆盖层的常规配置文件里，而不是本文件（包模式静态打进 dist/index.js，
+// 没有覆盖通道）。此处不再转出，避免出现两个真源。
+
 /**
  * 图片端点路由。必须带尾斜杠，与 `TRAILING_SLASH` 配对。
  *

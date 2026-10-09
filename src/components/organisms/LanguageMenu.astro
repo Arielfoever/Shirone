@@ -1,0 +1,252 @@
+---
+/**
+ * M3 顶栏语言菜单 — 内容语言切换（搜索与调色板之间的翻译按钮 + 下拉菜单）。
+ *
+ * 数据契约（SSR 与站内导航共用一份真源）：
+ * - SSR：`versions` prop 由页面经 `MainGridLayout` 传入——文章页是
+ *   `_PostDetail` 组装的语言互链，其余页面由 `shellPageLanguageVersions`
+ *   按对版规则兜底（首页 `/` ↔ `/zh/`，其余非文章页单版本），因此 prop
+ *   实际恒有值，缺省分支只作防御。条目文案来自
+ *   `listContentLanguageLabels()`——语言自称（endonym），十个 locale
+ *   同值，Swup 换页后无需在客户端重建任何文案。
+ * - 运行时：`#swup-container` 的 `data-page-languages` 属性随 Swup 替换
+ *   容器整体换新（replaceContent 连元素一起 replace），`content:replace`
+ *   后据此重新同步每条 href / 禁用态 / aria-current。
+ *
+ * 交互复用 TopAppBar 的 `[data-nav-group]` 约定：触发器开合绑定、外部点击
+ * 与 Escape 关闭都由 TopAppBar 既有脚本接管；本组件只负责状态同步、
+ * aria-haspopup 补挂与条目点击后收起菜单。
+ *
+ * 没有对应语言版本的条目呈禁用态——菜单始终列出全部内容语言，能力可见、
+ * 跳转只给真实存在的页面。跨语言条目由 Layout 的 Swup `ignoreVisit` 拦成
+ * 整页加载（主题 UI 是整页级的），菜单本身无需关心跳转形态。
+ */
+import IconButton from "@components/atoms/action/IconButton.svelte";
+import { Icon } from "astro-icon/components";
+import I18nKey from "@i18n/i18nKey";
+import { i18n } from "@i18n/translation";
+import { listContentLanguageLabels } from "@utils/content-utils";
+import {
+	type PostLanguageVersion,
+	resolveRequestLocale,
+} from "@utils/i18n-routing";
+
+interface Props {
+	/** 当前页面的全部语言版本（含 `current` 标记）；缺省时自指当前语言。 */
+	versions?: PostLanguageVersion[];
+}
+
+const { versions } = Astro.props;
+const label = i18n(I18nKey.switchLanguage);
+const currentLocale = resolveRequestLocale(Astro.url.pathname).locale;
+const available = new Map((versions ?? []).map((version) => [version.locale, version]));
+// 防御分支（versions 缺省）：当前语言视作自指页（可用但无 href，点击不跳转），
+// 其余语言没有目标页面可去，保持禁用。当前语言一律以请求路径解析为准，
+// 不假设它是默认语言——`/zh/` 下的非文章页当前语言是 zh-CN。
+const fallbackSelf: PostLanguageVersion = {
+	locale: currentLocale,
+	url: Astro.url.pathname,
+	current: true,
+};
+
+const items = listContentLanguageLabels().map(({ locale, label: text }) => {
+	const version =
+		available.get(locale) ??
+		(!versions && locale === currentLocale ? fallbackSelf : undefined);
+	const isCurrent = locale === currentLocale || version?.current === true;
+	return {
+		locale,
+		label: text,
+		href: isCurrent ? undefined : version?.url,
+		current: isCurrent,
+		disabled: !isCurrent && !version,
+	};
+});
+---
+
+<div class="top-app-bar__langgroup" data-nav-group>
+	<IconButton
+		id="language-switch"
+		label={label}
+		ariaExpanded={false}
+		ariaControls="language-menu"
+		class="shrink-0"
+	>
+		<Icon name="material-symbols:translate-rounded" class="text-[1.25rem]"></Icon>
+	</IconButton>
+	<div
+		id="language-menu"
+		class="top-app-bar__langmenu"
+		role="menu"
+		aria-label={label}
+	>
+		{
+			items.map(({ locale, label: text, href, current, disabled }) => (
+				<a
+					class="top-app-bar__langmenu-item m3-state-layer"
+					data-lang={locale}
+					role="menuitem"
+					href={href}
+					lang={locale}
+					hreflang={href ? locale : undefined}
+					aria-current={current ? "true" : undefined}
+					aria-disabled={disabled ? "true" : undefined}
+				>
+					<span class="top-app-bar__langmenu-item__label">{text}</span>
+					<Icon
+						name="material-symbols:check-rounded"
+						class="top-app-bar__langmenu-check"
+						aria-hidden="true"
+					></Icon>
+				</a>
+			))
+		}
+	</div>
+</div>
+
+<script>
+	// 菜单状态同步：SSR 初始态由 props 渲染；站内导航后从 #swup-container
+	// 的 data-page-languages 重建（属性随 Swup 容器整体换新）。
+	// 属性缺失时退化为「当前语言自指 + 其余禁用」，当前语言读容器的
+	// data-page-locale（同一次 SSR 输出，语言判定保持单一来源）。
+	function syncLanguageMenu(): void {
+		const menu = document.getElementById("language-menu");
+		if (!menu) return;
+		let versions: { locale: string; url: string; current?: boolean }[] | null =
+			null;
+		let pageLocale = "";
+		try {
+			const container = document.getElementById("swup-container");
+			const raw = container?.dataset.pageLanguages;
+			pageLocale = container?.dataset.pageLocale || "";
+			if (raw) versions = JSON.parse(raw);
+		} catch {
+			versions = null;
+		}
+		for (const item of menu.querySelectorAll<HTMLElement>("[data-lang]")) {
+			const locale = item.dataset.lang || "";
+			const version = versions
+				? versions.find((entry) => entry.locale === locale)
+				: pageLocale && locale === pageLocale
+					? { locale, url: location.pathname + location.search, current: true }
+					: undefined;
+			if (!version) {
+				item.removeAttribute("href");
+				item.removeAttribute("aria-current");
+				item.setAttribute("aria-disabled", "true");
+				continue;
+			}
+			item.removeAttribute("aria-disabled");
+			if (version.current) {
+				item.removeAttribute("href");
+				item.setAttribute("aria-current", "true");
+			} else {
+				item.setAttribute("href", version.url);
+				item.removeAttribute("aria-current");
+			}
+		}
+	}
+
+	/** 与 TopAppBar closeTopAppBarMenus 同构的单组收起（条目点击后立即反馈）。 */
+	function closeLanguageMenu(): void {
+		const group = document.querySelector(".top-app-bar__langgroup");
+		group?.classList.remove("top-app-bar__nav-group--open");
+		group
+			?.querySelector(":scope > button")
+			?.setAttribute("aria-expanded", "false");
+	}
+
+	function handleRouteChange(): void {
+		syncLanguageMenu();
+		closeLanguageMenu();
+	}
+
+	// IconButton 的 SSR 输出没有 aria-haspopup 透传位，这里补挂一次
+	//（触发器与菜单都在持久外壳里，不会被 Swup 替换）。
+	document
+		.getElementById("language-switch")
+		?.setAttribute("aria-haspopup", "true");
+
+	// 只有可跳转条目（带 href）点击后收起；禁用/当前条目点击无副作用
+	document
+		.getElementById("language-menu")
+		?.addEventListener("click", (event) => {
+			const target = event.target;
+			if (target instanceof Element && target.closest("a[href]")) {
+				closeLanguageMenu();
+			}
+		});
+
+	syncLanguageMenu();
+	document.addEventListener("swup:content:replace", handleRouteChange);
+	document.addEventListener("swup:page:view", handleRouteChange);
+</script>
+
+<style lang="stylus">
+.top-app-bar__langgroup
+	position: relative
+	flex-shrink: 0
+
+/* 与 top-app-bar__submenu 同族的浮层形态：surface 底、elevation-2、
+ * 短时长 opacity/transform 过渡；右缘对齐触发器（transform-origin 右上）。 */
+.top-app-bar__langmenu
+	position: absolute
+	top: calc(100% - 0.25rem)
+	right: 0
+	min-width: 10rem
+	padding: 0.375rem
+	border-radius: var(--shape-corner-l)
+	background: var(--surface-container)
+	box-shadow: var(--m3e-elevation-2)
+	opacity: 0
+	visibility: hidden
+	transform: translateY(-0.25rem) scale(0.98)
+	transform-origin: top right
+	transition:
+		opacity var(--m3e-duration-short),
+		transform var(--m3e-duration-short),
+		visibility var(--m3e-duration-short)
+
+/* 开合类由 TopAppBar 的 [data-nav-group] 通用绑定写入
+ * （top-app-bar__nav-group--open），与导航子菜单共用关闭逻辑 */
+.top-app-bar__nav-group--open > .top-app-bar__langmenu
+	opacity: 1
+	visibility: visible
+	transform: translateY(0) scale(1)
+
+.top-app-bar__langmenu-item
+	display: flex
+	align-items: center
+	gap: 0.75rem
+	min-height: 2.75rem
+	padding: 0 0.875rem
+	border-radius: var(--shape-corner-m)
+	color: var(--on-surface)
+	font: var(--m3e-type-label-large)
+	text-decoration: none
+	white-space: nowrap
+
+	&__label
+		flex: 1
+
+/* 当前语言：M3 选中态（与导航子菜单 active 同配对），勾选图标只在此态显示 */
+.top-app-bar__langmenu-item[aria-current="true"]
+	background: var(--secondary-container)
+	color: var(--on-secondary-container)
+	--m3e-state-color: var(--on-secondary-container)
+
+.top-app-bar__langmenu-check
+	display: none
+
+.top-app-bar__langmenu-item[aria-current="true"] :global(.top-app-bar__langmenu-check)
+	display: inline-flex
+	width: 1.25rem
+	height: 1.25rem
+	flex-shrink: 0
+
+/* 禁用态对齐 .m3-state-layer[disabled]（0.38 + 不可交互），
+ * <a> 没有 disabled 属性位，按 aria-disabled 等价实现 */
+.top-app-bar__langmenu-item[aria-disabled="true"]
+	opacity: 0.38
+	pointer-events: none
+</style>

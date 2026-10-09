@@ -64,6 +64,7 @@ mirroring the package structure in their own project:
 | Package file | User file that wins |
 | --- | --- |
 | `src/config/siteConfig.ts` | `shirones/config/siteConfig.ts` |
+| `src/config/contentI18nConfig.ts` | `shirones/config/contentI18nConfig.ts` |
 | `src/data/friends.ts` | `shirones/config/data/friends.ts` |
 | `src/components/atoms/blog/PostCard.astro` | `src/components/atoms/blog/PostCard.astro` |
 | `src/layouts/Layout.astro` | `src/layouts/Layout.astro` |

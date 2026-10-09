@@ -7,6 +7,13 @@ export function removeFileExtension(id: string): string {
 
 import { permalinkConfig } from "../config/permalinkConfig.ts";
 import { siteConfig } from "../config/siteConfig.ts";
+import {
+	type ContentLocale,
+	DEFAULT_LOCALE,
+	getPostSlug,
+	rootPathFor,
+	splitLocaleSuffix,
+} from "./i18n-routing.ts";
 
 export interface PermalinkDateParts {
 	year: string;
@@ -174,10 +181,15 @@ export type PostLikeForPermalink = {
 };
 
 /**
- * 生成 permalink 相对 slug（不含 leading/trailing slashes）
+ * 生成 permalink 相对 slug（不含 leading/trailing slashes，也**不含语言前缀**）。
+ *
+ * 语言前缀由 URL 落点决定（默认语言 `/<slug>/`、其余 `/<route>/<slug>/`，
+ * 见 `rootPathFor`），所以这里必须产出语言中立的 slug：非默认语言的 id 自带
+ * `zh-CN/` 前缀，`%postname%`、`%raw_postname%` 都要把它剥掉，否则会得到
+ * `/zh/zh-CN/…`。
  */
 export function generatePermalinkSlug(post: PostLikeForPermalink): string {
-	// 1. 若文章有自定义 permalink，最高优先级直接采用
+	// 1. 若文章有自定义 permalink，最高优先级直接采用（作者书写的中立路径）
 	if (post.data?.permalink && post.data.permalink.trim().length > 0) {
 		return post.data.permalink.replace(/^\/+/, "").replace(/\/+$/, "");
 	}
@@ -186,7 +198,7 @@ export function generatePermalinkSlug(post: PostLikeForPermalink): string {
 		(post as { id?: string; slug?: string }).id ??
 		(post as { id?: string; slug?: string }).slug ??
 		"";
-	const defaultSlug = removeFileExtension(postId);
+	const defaultSlug = removeFileExtension(getPostSlug(postId));
 
 	// 2. 若全局 permalink 未启用
 	if (!permalinkConfig.enable) {
@@ -207,7 +219,8 @@ export function generatePermalinkSlug(post: PostLikeForPermalink): string {
 		const parts = post.filePath.split(/[/\\]/);
 		const filename = parts[parts.length - 1];
 		if (filename) {
-			rawPostname = removeFileExtension(filename);
+			// 保留大小写，但剥掉语言后缀：`index.zh-CN.md` 不能变成 `index.zh-CN`
+			rawPostname = splitLocaleSuffix(removeFileExtension(filename)).base;
 		}
 	}
 
@@ -235,9 +248,13 @@ export function generatePermalinkSlug(post: PostLikeForPermalink): string {
 
 /**
  * 获取文章的完整 permalink 路径（如 /my-post/ 或 /2024/12/post/）
+ * 非默认语言落在前缀之下（/zh/my-post/），与 `getPostUrl` 的分支保持一致。
  */
-export function getPermalinkPath(post: PostLikeForPermalink): string {
+export function getPermalinkPath(
+	post: PostLikeForPermalink,
+	locale: ContentLocale = DEFAULT_LOCALE,
+): string {
 	const slug = generatePermalinkSlug(post);
 	const cleanSlug = slug.replace(/^\/+/, "").replace(/\/+$/, "");
-	return `/${cleanSlug}/`;
+	return rootPathFor(cleanSlug, locale);
 }

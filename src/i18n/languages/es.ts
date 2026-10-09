@@ -145,6 +145,11 @@ export const es: Translation = {
 	[Key.postRssEncryptedNotice]:
 		"Este artículo está cifrado. Visite el sitio web para ingresar la contraseña.",
 
+	[Key.postAlsoAvailableIn]: "También disponible en: ",
+	[Key.switchLanguage]: "Cambiar idioma",
+	[Key.postFallbackNotice]: "Esta publicación no está disponible en {lang}",
+	[Key.postLanguageOnlyBadge]: "Solo en {lang}",
+
 	[Key.imageViewer]: "Visor de imágenes",
 	[Key.openImage]: "Abrir imagen",
 	[Key.previousImage]: "Imagen anterior",

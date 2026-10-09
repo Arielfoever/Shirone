@@ -12,8 +12,8 @@ import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
 import { formatDateToYYYYMMDD } from "@utils/date-utils";
 import { isEncryptedPost } from "@utils/post-encryption";
-import { getCategoryUrl, getDir, getTagUrl } from "@utils/url-utils";
 import { getProjectImageLoader } from "@utils/project-images";
+import { getCategoryUrl, getDir, getTagUrl } from "@utils/url-utils";
 
 interface Props {
 	class?: string;
@@ -29,6 +29,8 @@ interface Props {
 	description: string;
 	draft: boolean;
 	style: string;
+	/** 语言徽标（缺当前页面语言版本的混合列表卡片），透传 atom。 */
+	languageBadge?: { label: string; title: string };
 }
 const {
 	entry,
@@ -42,6 +44,7 @@ const {
 	image,
 	description,
 	style,
+	languageBadge,
 } = Astro.props;
 const className = Astro.props.class;
 
@@ -151,4 +154,5 @@ const excerpt =
 	category={categoryLink}
 	tags={tagLinks}
 	wordCount={wordCount}
+	languageBadge={languageBadge}
 />

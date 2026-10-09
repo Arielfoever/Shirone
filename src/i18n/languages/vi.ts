@@ -146,6 +146,11 @@ export const vi: Translation = {
 	[Key.postRssEncryptedNotice]:
 		"Bài viết đã được mã hóa. Vui lòng truy cập trang web để mở khóa.",
 
+	[Key.postAlsoAvailableIn]: "Cũng có ở các ngôn ngữ: ",
+	[Key.switchLanguage]: "Đổi ngôn ngữ",
+	[Key.postFallbackNotice]: "Bài viết này không có bản {lang}",
+	[Key.postLanguageOnlyBadge]: "Chỉ có {lang}",
+
 	[Key.imageViewer]: "Trình xem ảnh",
 	[Key.openImage]: "Mở ảnh",
 	[Key.previousImage]: "Ảnh trước",
