@@ -2,6 +2,14 @@ import { permalinkConfig } from "../config/permalinkConfig.ts";
 import type I18nKey from "../i18n/i18nKey.ts";
 import { i18n } from "../i18n/translation.ts";
 import {
+	type ContentLocale,
+	DEFAULT_LOCALE,
+	getPostLocale,
+	getPostSlug,
+	postPathFor,
+	rootPathFor,
+} from "./i18n-routing.ts";
+import {
 	generatePermalinkSlug,
 	type PostLikeForPermalink,
 } from "./permalink-utils.ts";
@@ -24,22 +32,34 @@ function joinUrl(...parts: string[]): string {
 	return joined.replace(/\/+/g, "/");
 }
 
-export function getPostUrlBySlug(slug: string): string {
+/**
+ * 文章（或其 id/别名）详情页 URL。
+ *
+ * `locale` 省略时从入参自身解析：调用方普遍直接传集合 id，而非默认语言的 id
+ * 自带前缀（`zh-CN/guide`），前缀剥掉后由 `postPathFor` 决定 `/posts/…/`
+ * 还是 `/zh/…/`。
+ */
+export function getPostUrlBySlug(slug: string, locale?: ContentLocale): string {
 	let slugWithoutExt = removeFileExtension(slug)
 		.replace(/^\/+/, "")
 		.replace(/\/+$/, "");
 	if (slugWithoutExt.startsWith("posts/")) {
 		slugWithoutExt = slugWithoutExt.replace(/^posts\//, "");
 	}
-	return url(`/posts/${slugWithoutExt}/`);
+	const resolved = locale ?? getPostLocale(slugWithoutExt);
+	return url(postPathFor(getPostSlug(slugWithoutExt), resolved));
 }
 
-export function getPostUrlByAlias(alias: string): string {
+/** 语言中立的 `alias` 前缀见 `postPathFor`；alias 本身由作者书写，不带语言信息。 */
+export function getPostUrlByAlias(
+	alias: string,
+	locale: ContentLocale = DEFAULT_LOCALE,
+): string {
 	let cleanAlias = alias.replace(/^\/+/, "").replace(/\/+$/, "");
 	if (cleanAlias.startsWith("posts/")) {
 		cleanAlias = cleanAlias.replace(/^posts\//, "");
 	}
-	return url(`/posts/${cleanAlias}/`);
+	return url(postPathFor(cleanAlias, locale));
 }
 
 export function getPostUrl(
@@ -63,25 +83,29 @@ export function getPostUrl(
 		return post.url;
 	}
 
-	if (post.data?.permalink && post.data.permalink.trim().length > 0) {
-		const slug = post.data.permalink.replace(/^\/+/, "").replace(/\/+$/, "");
-		return url(`/${slug}/`);
-	}
-
-	if (permalinkConfig.enable) {
-		const slug = generatePermalinkSlug(post as PostLikeForPermalink);
-		return url(`/${slug}/`);
-	}
-
-	if (post.data?.alias && post.data.alias.trim().length > 0) {
-		return getPostUrlByAlias(post.data.alias);
-	}
-
+	// 语言从 id 解析（非默认语言 id 自带前缀），后续四条分支的落点因此都带前缀：
+	// permalink 是站根级路径（`rootPathFor`），slug/alias 是文章段（`postPathFor`）。
 	const postId =
 		(post as { id?: string; slug?: string }).id ??
 		(post as { id?: string; slug?: string }).slug ??
 		"";
-	return getPostUrlBySlug(postId);
+	const locale: ContentLocale = postId ? getPostLocale(postId) : DEFAULT_LOCALE;
+
+	if (post.data?.permalink && post.data.permalink.trim().length > 0) {
+		const slug = post.data.permalink.replace(/^\/+/, "").replace(/\/+$/, "");
+		return url(rootPathFor(slug, locale));
+	}
+
+	if (permalinkConfig.enable) {
+		const slug = generatePermalinkSlug(post as PostLikeForPermalink);
+		return url(rootPathFor(slug, locale));
+	}
+
+	if (post.data?.alias && post.data.alias.trim().length > 0) {
+		return getPostUrlByAlias(post.data.alias, locale);
+	}
+
+	return getPostUrlBySlug(postId, locale);
 }
 
 export function getTagUrl(tag: string): string {

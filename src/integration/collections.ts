@@ -1,6 +1,7 @@
 import { defineCollection } from "astro:content";
 import { glob } from "astro/loaders";
 import { z } from "astro/zod";
+import { generatePostId } from "../utils/i18n-routing.ts";
 
 /**
  * Post schema — used by both source repo (inline) and package mode users
@@ -87,13 +88,22 @@ export const seriesSchema: z.ZodType = z.object({
 /**
  * Helper to create a collection definition with the standard glob loader.
  * Package mode users can import this if they need custom paths.
+ *
+ * `posts` 必须带 `generateId`：内容多语言（`index.<locale>.md`）依赖它剥出
+ * 语言后缀，与源码仓 `src/content.config.ts` 的 loader 保持同一份实现。
+ * 由 pipeline 从 `collections.manifest.json` 生成的那份 `content.config.ts`
+ * 同样要接上（见 `docs/packaging-contract.md`）。
  */
 export function createCollection(
 	key: "posts" | "moments" | "spec" | "series",
 	base: string,
 ): ReturnType<typeof defineCollection> {
 	const loaders = {
-		posts: glob({ base: `${base}/posts`, pattern: "**/*.{md,mdx}" }),
+		posts: glob({
+			base: `${base}/posts`,
+			pattern: "**/*.{md,mdx}",
+			generateId: generatePostId,
+		}),
 		moments: glob({ base: `${base}/moments`, pattern: "**/*.md" }),
 		spec: glob({ base: `${base}/spec`, pattern: "**/*.{md,mdx}" }),
 		series: glob({ base: `${base}/series`, pattern: "**/*.md" }),

@@ -1,9 +1,19 @@
 import { defineCollection } from "astro:content";
 import { glob } from "astro/loaders";
 import { z } from "astro/zod";
+import { generatePostId } from "./utils/i18n-routing.ts";
 
 const postsCollection = defineCollection({
-	loader: glob({ base: "./src/content/posts", pattern: "**/*.{md,mdx}" }),
+	// `generateId` 是内容多语言的前提：Astro 默认实现会把 `index.zh-CN.md`
+	// slug 成 `indexzhcn`（github-slugger 吃掉点号），语言既进不了 id 也进不了
+	// URL。自定义实现剥出语言后缀（`zh-CN/guide`），默认语言 id 保持原样，
+	// 编码规则见 src/utils/i18n-routing.ts。`pattern` 必须紧跟 `base`：
+	// tests/collections-manifest.test.mjs 用它对账 collections.manifest.json。
+	loader: glob({
+		base: "./src/content/posts",
+		pattern: "**/*.{md,mdx}",
+		generateId: generatePostId,
+	}),
 	schema: z.object({
 		title: z.string(),
 		published: z.date(),

@@ -14,7 +14,12 @@ export const CONFIG_EXTENSIONS: string[] = [".ts", ".mts", ".js", ".mjs"];
  * overridable despite the comment claiming otherwise.
  */
 const BARREL_RE = /(?:^|\/)index\.(ts|js|mts|mjs)$/;
-export const COMPONENT_EXTENSIONS: string[] = [".astro", ".svelte", ".ts", ".js"];
+export const COMPONENT_EXTENSIONS: string[] = [
+	".astro",
+	".svelte",
+	".ts",
+	".js",
+];
 
 /** Strip a known source extension from a path. */
 function stripExtension(path: string): string {
@@ -125,8 +130,10 @@ export function resolveOverride(
 
 		const rel = relative(target.packageDir, absolutePath);
 		// `index.ts` barrels stay owned by the package: overriding them would
-		// break the named-export contract the theme relies on.
-		if (BARREL_RE.test(rel)) continue;
+		// break the named-export contract the theme relies on. Normalise first:
+		// `relative()` yields backslash separators on Windows, which the
+		// forward-slash pattern would silently miss.
+		if (BARREL_RE.test(normalisePath(rel))) continue;
 
 		const hit = probe(join(target.userDir, rel), target.extensions);
 		if (hit) return hit;
@@ -175,8 +182,9 @@ export function buildOverrideRegistry(
 			const rel = relative(target.packageDir, abs);
 			// `index.ts` barrels stay owned by the package: overriding one would
 			// break the named-export contract the theme relies on. Matched at any
-			// depth, not just the directory root.
-			if (BARREL_RE.test(rel)) continue;
+			// depth, not just the directory root (and on Windows too: `relative()`
+			// returns backslash separators, so normalise before matching).
+			if (BARREL_RE.test(normalisePath(rel))) continue;
 
 			const hit = probe(join(target.userDir, rel), target.extensions);
 			if (hit) {

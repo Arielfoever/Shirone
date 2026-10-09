@@ -56,6 +56,8 @@ themeColor:
 | `permalink.yaml` | `permalinkConfig` 文章固定链接 | `context-menu.yaml` | `contextMenuConfig` 桌面右键增强 |
 | `i18n.yaml` | `i18nConfig` 多语言与本地化 | `series.yaml` | `seriesConfig` 系列连载 |
 
+> **注**：内容多语言的**语言表**不在 YAML 覆盖范围内。`i18nConfig` 是 UI 本地化的占位领域；内容语言表在 `src/config/contentI18nConfig.ts`（`contentI18n`：defaultLocale + locales），它是路由与集合 id 的结构性输入，需保留 `as const` 字面量类型，因此不走 `withUserConfig()` 深合并链。要增删内容语言或调整语言菜单顺序，直接改主题侧的该文件，见 `docs/content-i18n.md` §8。
+
 各配置领域的可用字段、默认值与逐项注释均以代码仓中的 `src/config/<domain>Config.ts` 为准。系统同样支持 `.yml` 后缀；空文件与纯注释文件视作不覆盖。
 
 `config/umami.yaml` 的 `websiteId` 与 `scriptUrl` 是可选的成对字段。省略两者时，`enable` 与 `shareUrl` 仍会启用公开统计读取；只有需要向 Umami 上报访问时才同时填写两者，单独填写任一字段不会加载采集脚本。

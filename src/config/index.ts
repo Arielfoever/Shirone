@@ -30,6 +30,7 @@ export {
 	resolveCommentOptions,
 } from "./commentConfig";
 export { compassConfig } from "./compassConfig";
+export { astroI18n, contentI18n } from "./contentI18nConfig";
 export { contextMenuConfig } from "./contextMenuConfig";
 export { devicesConfig } from "./devicesConfig";
 export { expressiveCodeConfig } from "./expressiveCodeConfig";

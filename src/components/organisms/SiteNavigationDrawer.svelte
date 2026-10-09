@@ -6,6 +6,7 @@
  * 链接由 Swup 自动接管，点击后收起抽屉；高亮与当前路由/分类筛选同步。
  */
 import Icon from "@iconify/svelte";
+import { resolveI18nText } from "@utils/i18n-utils";
 import { resolveNavBarLinks, resolvePageKey } from "@utils/nav-utils";
 import { url } from "@utils/url-utils";
 import { onMount, tick } from "svelte";
@@ -18,27 +19,32 @@ const openGroups = $state<Record<string, boolean>>({});
 
 const links = resolveNavBarLinks(navBarConfig.links);
 
+// name 以 "$t:<key>" 形态存储（见 navBarConfig），渲染期才解析成当前
+// 页面语言的文案：SSR 在请求上下文内取值，hydration 读 <html data-ui-locale>。
 const primaryItems = links.map((link) => {
-	const key = link.name.toLowerCase();
+	const label = resolveI18nText(link.name);
 	return {
-		value: key,
-		label: link.name,
+		value: label.toLowerCase(),
+		label: label,
 		icon: link.icon,
 		href: link.url ? (link.external ? link.url : url(link.url)) : undefined,
 		external: !!link.external,
 		pageKey: link.pageKey ?? "",
-		children: link.children?.map((child) => ({
-			value: child.name.toLowerCase(),
-			label: child.name,
-			icon: child.icon,
-			href: child.url
-				? child.external
-					? child.url
-					: url(child.url)
-				: undefined,
-			external: !!child.external,
-			pageKey: child.pageKey ?? "",
-		})),
+		children: link.children?.map((child) => {
+			const childLabel = resolveI18nText(child.name);
+			return {
+				value: childLabel.toLowerCase(),
+				label: childLabel,
+				icon: child.icon,
+				href: child.url
+					? child.external
+						? child.url
+						: url(child.url)
+					: undefined,
+				external: !!child.external,
+				pageKey: child.pageKey ?? "",
+			};
+		}),
 	};
 });
 

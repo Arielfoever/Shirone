@@ -28,6 +28,7 @@ import {
 import { defaultFavicons } from "../constants/icon";
 import type { BannerSourceValue, Favicon } from "../types/config";
 import { createFontRoleStyle } from "../utils/font-options";
+import { uiLanguagePrefixMap } from "../utils/i18n-routing";
 import { resolvePageWidth } from "../utils/responsive-utils";
 import "../styles/main.css";
 import "../styles/font-faces.css";
@@ -41,10 +42,21 @@ interface Props {
 	lang?: string;
 	setOGTypeArticle?: boolean;
 	page?: SidebarPage;
+	/** 整页排除出 pagefind 索引（`<html data-pagefind-ignore>`）。
+	 *  语言回退桥接页用它避免与原文页面产生重复搜索条目；默认关闭。 */
+	pagefindIgnore?: boolean;
 }
 
-let { title, banner, ogImage, description, lang, setOGTypeArticle, page } =
-	Astro.props;
+let {
+	title,
+	banner,
+	ogImage,
+	description,
+	lang,
+	setOGTypeArticle,
+	page,
+	pagefindIgnore,
+} = Astro.props;
 
 const initialPage =
 	page ?? (pathsEqual(Astro.url.pathname, url("/")) ? "home" : undefined);
@@ -101,8 +113,21 @@ if (title) {
 const favicons: Favicon[] =
 	siteConfig.favicon.length > 0 ? siteConfig.favicon : defaultFavicons;
 
+/**
+ * 页面 UI 语言：跟随请求（中间件写入 `locals.locale`）。这是
+ * `<html data-ui-locale>` 的值，也是客户端 `i18n()` 解析链的第二环——
+ * 顶栏、侧栏、Search 等持久外壳与客户端工具都以它为准。
+ */
+const uiLocale = Astro.locals.locale ?? siteConfig.lang;
+/** 语言 URL 前缀映射（JSON），供客户端跨语言导航判定，见 `uiLanguagePrefixMap`。 */
+const uiLangMap = JSON.stringify(uiLanguagePrefixMap());
+
 if (!lang) {
-	lang = `${siteConfig.lang}`;
+	// 未显式声明（列表页、数据页……）时 `<html lang>` 跟随 UI 语言：
+	// `/zh/` 下的页面必须产出 `lang="zh-CN"`，否则 pagefind 会把它归进
+	// 英文索引。文章详情页传 `documentLang`（frontmatter `lang` 可覆盖
+	// 内容语言），显式值仍然优先。
+	lang = uiLocale;
 }
 const siteLang = lang.replace("_", "-");
 const fontRoleStyle = createFontRoleStyle(resolvedFontOptions);
@@ -116,7 +141,7 @@ const hasMonoFont =
 ---
 
 <!DOCTYPE html>
-<html lang={siteLang} class="bg-[var(--page-bg)] transition text-[14px] md:text-[16px]">
+<html lang={siteLang} data-ui-locale={uiLocale} data-ui-lang-map={uiLangMap} data-pagefind-ignore={pagefindIgnore ? "" : undefined} class="bg-[var(--page-bg)] transition text-[14px] md:text-[16px]">
 	<head>
 		<style is:inline>@layer properties, theme, base, components, utilities;</style>
 
@@ -348,6 +373,51 @@ const setup = () => {
 		window.swup.hooks.on('scroll:start', () => { if (visitActive) scrollStarted = true; });
 		window.swup.hooks.on('scroll:end', finishVisit);
 	}
+
+	// ── 跨语言导航守卫 ────────────────────────────────────────────────
+	// 主题 UI 是整页级的：持久外壳（顶栏/侧栏/FAB）不在 #swup-container
+	// 里，SSR 固化的文案也随页面走。跨语言的站内链接若被 Swup 局部替换，
+	// 外壳会停在旧语言上。因此当目标 URL 的语言前缀与当前页面不同，
+	// 让 ignoreVisit 返回 true——Swup 放弃接管，浏览器按原生行为整页
+	// 加载，新页面的外壳与文案全部来自目标语言。前缀→语言映射由 SSR
+	// 固化在 <html data-ui-lang-map>（见 uiLanguagePrefixMap）。
+	let langPrefixMap: Record<string, string> = {};
+	try {
+		langPrefixMap = JSON.parse(document.documentElement.dataset.uiLangMap || '{}');
+	} catch {
+		// 映射缺失/损坏时退化为「从不拦截」，行为与未引入本机制一致。
+	}
+	function languagePrefixOf(pathname: string): string {
+		// 长前缀优先匹配（`/blog/zh` 要先于 `/blog`），空键（默认语言）兜底。
+		const keys = Object.keys(langPrefixMap).sort((a, b) => b.length - a.length);
+		for (const key of keys) {
+			if (key === '') continue;
+			if (pathname === key || pathname.startsWith(`${key}/`)) return key;
+		}
+		return '';
+	}
+	window.swup.options.ignoreVisit = (url: string) => {
+		try {
+			const target = new URL(url, location.href);
+			if (target.origin !== location.origin) return false;
+			return (
+				languagePrefixOf(target.pathname) !==
+				languagePrefixOf(location.pathname)
+			);
+		} catch {
+			return false;
+		}
+	};
+	// 兜底：浏览器前进/后退（popstate）跨语言时 Swup 不走 link:click，
+	// 会直接换入旧语言的容器内容——比较外壳语言与容器语言，不一致就
+	// 重启整页加载（data-page-locale 由 MainGridLayout 输出）。
+	window.swup.hooks.on('content:replace', () => {
+		const shellLanguage = document.documentElement.dataset.uiLocale;
+		const pageLanguage = document.getElementById('swup-container')?.dataset.pageLocale;
+		if (shellLanguage && pageLanguage && shellLanguage !== pageLanguage) {
+			location.reload();
+		}
+	});
 };
 if (window.swup?.hooks) setup();
 else document.addEventListener('swup:enable', setup, { once: true });

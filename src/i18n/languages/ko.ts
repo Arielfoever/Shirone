@@ -142,6 +142,11 @@ export const ko: Translation = {
 	[Key.postRssEncryptedNotice]:
 		"이 글은 암호화되었습니다. 웹사이트를 방문하여 비밀번호를 입력해 읽어주세요.",
 
+	[Key.postAlsoAvailableIn]: "이 글의 다른 언어: ",
+	[Key.switchLanguage]: "언어 전환",
+	[Key.postFallbackNotice]: "{lang} 버전이 없습니다",
+	[Key.postLanguageOnlyBadge]: "{lang} 전용",
+
 	[Key.imageViewer]: "이미지 뷰어",
 	[Key.openImage]: "이미지 열기",
 	[Key.previousImage]: "이전 이미지",

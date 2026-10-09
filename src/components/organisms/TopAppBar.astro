@@ -6,15 +6,25 @@
  * 菜单按钮点击派发 site-drawer:toggle 事件，由 SiteNavigationDrawer 监听开合。
  */
 import IconButton from "@components/atoms/action/IconButton.svelte";
+import { resolveI18nText } from "@utils/i18n-utils";
+import type { PostLanguageVersion } from "@utils/i18n-routing";
 import { resolveNavBarLinks, resolvePageKey } from "@utils/nav-utils";
 import { url } from "@utils/url-utils";
 import { Icon } from "astro-icon/components";
 import { siteConfig } from "@/config";
 import { navBarConfig } from "@/config/navBarConfig";
 import DisplaySettings from "./DisplaySettings.svelte";
+import LanguageMenu from "./LanguageMenu.astro";
 import LightDarkSwitch from "./LightDarkSwitch.svelte";
 import Search from "./Search.svelte";
 
+interface Props {
+	class?: string;
+	/** 当前页面各语言版本（顶栏语言菜单；缺省时语言菜单自指当前语言）。 */
+	languageVersions?: PostLanguageVersion[];
+}
+
+const { languageVersions } = Astro.props;
 const className = Astro.props.class;
 const links = resolveNavBarLinks(navBarConfig.links);
 const currentPageKey = resolvePageKey(Astro.url);
@@ -61,14 +71,14 @@ function isActive(link: (typeof links)[number]): boolean {
 								active && "top-app-bar__nav-link--active",
 							]} aria-expanded="false">
 								{link.icon && <Icon name={link.icon} class="text-[1.1rem]"></Icon>}
-								{link.name}
+								{resolveI18nText(link.name)}
 								<Icon name="material-symbols:keyboard-arrow-down-rounded" class="text-[1rem]"></Icon>
 							</button>
 						) : (
 							<a href={href} target={link.external ? "_blank" : undefined} rel={link.external ? "noopener noreferrer" : undefined}
 								aria-current={active ? "page" : undefined} data-nav-key={link.pageKey ?? ""}
 								class:list={["top-app-bar__nav-link m3-state-layer relative flex h-10 items-center gap-1 px-3 text-sm font-bold text-[var(--on-surface-variant)] transition-colors hover:text-[var(--on-surface)]", active && "top-app-bar__nav-link--active"]}>
-								{link.icon && <Icon name={link.icon} class="text-[1.1rem]"></Icon>}{link.name}
+								{link.icon && <Icon name={link.icon} class="text-[1.1rem]"></Icon>}{resolveI18nText(link.name)}
 								{link.external && <Icon name="material-symbols:arrow-outward-rounded" class="ml-1 text-[0.875rem]"></Icon>}
 							</a>
 						)}
@@ -76,7 +86,7 @@ function isActive(link: (typeof links)[number]): boolean {
 							{link.children.map((child) => {
 								const childHref = child.external ? child.url : hrefFor(child.url);
 							return <a href={childHref} target={child.external ? "_blank" : undefined} rel={child.external ? "noopener noreferrer" : undefined} role="menuitem" data-nav-key={child.pageKey ?? ""} class="top-app-bar__submenu-item">
-									{child.icon && <Icon name={child.icon} class="text-[1.2rem]"></Icon>}{child.name}{child.external && <Icon name="material-symbols:arrow-outward-rounded" class="ml-auto text-[0.875rem]"></Icon>}
+									{child.icon && <Icon name={child.icon} class="text-[1.2rem]"></Icon>}{resolveI18nText(child.name)}{child.external && <Icon name="material-symbols:arrow-outward-rounded" class="ml-auto text-[0.875rem]"></Icon>}
 								</a>;
 							})}
 						</div>}
@@ -86,6 +96,7 @@ function isActive(link: (typeof links)[number]): boolean {
 		</nav>
 		<div class="flex-1"></div>
 		<Search client:only="svelte"></Search>
+		<LanguageMenu versions={languageVersions}></LanguageMenu>
 		{!siteConfig.themeColor.fixed && (
 			<IconButton id="display-settings-switch" label="Display Settings" class="shrink-0">
 				<Icon name="material-symbols:palette-outline" class="text-[1.25rem]"></Icon>
@@ -273,7 +284,8 @@ document.addEventListener('swup:content:replace', bindSearchTriggers);
 		 * the white chrome used by the transparent app bar. */
 		:global(.top-app-bar--transparent .float-panel),
 		:global(.top-app-bar--transparent .m3-menu),
-		:global(.top-app-bar--transparent .top-app-bar__submenu) {
+		:global(.top-app-bar--transparent .top-app-bar__submenu),
+		:global(.top-app-bar--transparent .top-app-bar__langmenu) {
 			--on-surface: var(--mc-on-surface);
 			--on-surface-variant: var(--mc-on-surface-variant);
 			--primary: var(--mc-primary);

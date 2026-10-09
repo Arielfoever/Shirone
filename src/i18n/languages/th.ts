@@ -134,6 +134,11 @@ export const th: Translation = {
 	[Key.postEncryptedBadge]: "เข้ารหัสแล้ว",
 	[Key.postRssEncryptedNotice]: "บทความนี้ถูกเข้ารหัส กรุณาเข้าสู่เว็บไซต์เพื่อกรอกรหัสผ่าน",
 
+	[Key.postAlsoAvailableIn]: "มีในภาษาอื่นด้วย: ",
+	[Key.switchLanguage]: "เปลี่ยนภาษา",
+	[Key.postFallbackNotice]: "บทความนี้ไม่มีในภาษา{lang}",
+	[Key.postLanguageOnlyBadge]: "มีเฉพาะภาษา{lang}",
+
 	[Key.imageViewer]: "ตัวดูรูปภาพ",
 	[Key.openImage]: "เปิดรูปภาพ",
 	[Key.previousImage]: "รูปก่อนหน้า",

@@ -145,6 +145,11 @@ export const tr: Translation = {
 	[Key.postRssEncryptedNotice]:
 		"Bu yazı şifrelidir. Tamamını okumak için lütfen siteyi ziyaret edin.",
 
+	[Key.postAlsoAvailableIn]: "Şu dillerde de mevcut: ",
+	[Key.switchLanguage]: "Dili değiştir",
+	[Key.postFallbackNotice]: "Bu yazı {lang} dilinde mevcut değil",
+	[Key.postLanguageOnlyBadge]: "Yalnızca {lang}",
+
 	[Key.imageViewer]: "Görsel görüntüleyici",
 	[Key.openImage]: "Görseli aç",
 	[Key.previousImage]: "Önceki görsel",

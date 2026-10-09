@@ -120,9 +120,18 @@ export const siteRehypePlugins = [
 					FieldComponent(
 						{
 							...properties,
-							"label-required": i18n(fieldI18nKeys.required),
-							"label-optional": i18n(fieldI18nKeys.optional),
-							"label-deprecated": i18n(fieldI18nKeys.deprecated),
+							// 字段卡标签显式固定站点语言：渲染产物会被内容缓存
+							// 复用，不能跟随请求上下文的语言（否则缓存首跑在
+							// `/zh/*` 渲染中就把中文标签固化进所有页面）。
+							"label-required": i18n(fieldI18nKeys.required, {
+								lang: siteConfig.lang || "en",
+							}),
+							"label-optional": i18n(fieldI18nKeys.optional, {
+								lang: siteConfig.lang || "en",
+							}),
+							"label-deprecated": i18n(fieldI18nKeys.deprecated, {
+								lang: siteConfig.lang || "en",
+							}),
 						},
 						children,
 					),

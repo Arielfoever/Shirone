@@ -326,6 +326,8 @@ variables.styl  --mc-* → 语义令牌（--primary、--surface-container-low…
 | `src/components/molecules/ArticleDiscoveryItem.astro` | 文章内部延伸阅读链接行：使用 AccentBar、SSR 图标与整行状态层，按主题关联/稳定随机轨道映射 primary/tertiary 语义角色，无嵌套 Card、无客户端水合 |
 | `src/components/molecules/Series.astro` | 系列列表侧栏 widget（WidgetLayout + 复用 `CategoryList`，按最近更新排序，受 `seriesConfig.enable` 门控），见 `docs/sidebar-widgets.md` 第 11 节 |
 | `src/components/molecules/SeriesCard.astro` | 文章内系列块（系列名 + 第 N/共 M + 组内上一篇/下一篇，位置由 `seriesConfig.cardPosition` 决定），两条文章路由共用；无容器背景的分节，状态 pill 走 M3 tonal 配对 |
+| `src/components/molecules/PostLanguageAlternates.astro` | 文章语言互链（「本文还提供」+ 语言名状态层链接，`hreflang`/`lang` 标注目标语言），数据源 `getPostLanguageAlternates()`，仅在存在其它语言版本时渲染 |
+| `src/components/organisms/LanguageMenu.astro` | 顶栏语言菜单（搜索与调色板之间的翻译按钮 + 下拉内容语言切换）：SSR 全量 endonym 条目 + `aria-current`/禁用态，版本数据由 `MainGridLayout` 恒定输出（文章页互链 / `shellPageLanguageVersions` 兜底），站内导航后从 `#swup-container` 的 `data-page-languages` 同步；开合/Escape/外部点击复用 TopAppBar `[data-nav-group]` 约定，文案 key `I18nKey.switchLanguage` |
 | `src/components/organisms/ArticleDiscovery.astro` | 文章主 Card 内的延伸阅读编排：接收页面构建期选好的相关文章与随机文章，以分隔线和语义列表承接正文，随 Swup 主内容整体替换 |
 | `src/components/organisms/ArticleShare.svelte` | 文章主 Card 内的分享编排：链接复制、海报生成中状态、预览与下载 |
 | `src/utils/share-poster.ts` | 分享海报生成底层工具：动态按需加载 qrcode、读取当前主题色快照、Canvas 2D 绘制固定宽度、内容高度的海报并输出 PNG Blob |

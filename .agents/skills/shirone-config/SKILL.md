@@ -21,7 +21,7 @@ description: Configuring a Shirone blog site - site identity, theme colors, navi
 | `profileConfig.ts` | 头像、名称、简介、社交链接 |
 | `navBarConfig.ts` | 导航链接(`LinkPresets` 预设) |
 | `sidebarConfig.ts` | 侧栏编排:`arrangement` 单/双栏、`side`、widget 清单与页面过滤 |
-| `postListConfig.ts` | 分页大小、list/grid 布局 |
+| `postListConfig.ts` | 分页大小、list/grid 布局、首页多语言范围 `languageScope`（默认 `"language"` 只列当前语言；`"all"` 混合列出全部文章组并以默认语言版本兜底，跨语言卡片链桥接页并带 endonym 语言徽标 `languageFallbackBadge`（可关闭），架构见 `docs/content-i18n.md` §6/§6a） |
 | `articleConfig.ts` | 相关文章、分享与海报 |
 | `commentConfig.ts` | 评论系统(默认关闭,Twikoo / Giscus 双 Provider) |
 | `umamiConfig.ts` | Umami 数据统计：公开分享统计读取，以及可选的官方访问采集脚本 |
@@ -31,6 +31,7 @@ description: Configuring a Shirone blog site - site identity, theme colors, navi
 | `llmsConfig.ts` | 生成 AI 友好的 `/llms.txt` 与 `/llms-full.txt` |
 | `skillsConfig.ts` 等页面配置 | 技能/项目/时间线/设备/游戏页开关与分类,内容在对应 `src/data/*.ts`；友链、罗盘、番剧和音乐数据也在该目录维护 |
 | `seriesConfig.ts` | 系列连载（`/series/` 索引与详情页、文章内系列卡位置 `cardPosition`、默认开启，关闭时入口与页面同步隐藏） |
+| `contentI18nConfig.ts` | 内容多语言语言表：`defaultLocale` + `locales`（内容语言 ↔ URL 路由段 ↔ endonym 展示标签，数组顺序即语言菜单顺序）；增删内容语言只改此表，路由、语言菜单、徽标与桥接页全自动跟随，写错形态构建期报错；包模式用 `shirones/config/contentI18nConfig.ts` 覆盖（见 `docs/content-i18n.md` §8） |
 | `fabConfig.ts` | 右下角悬浮控制流 |
 | `footerConfig.ts` / `FooterConfig.html` | 可选页脚 HTML 注入(默认关闭) |
 | `licenseConfig.ts` / `expressiveCodeConfig.ts` | 文章版权声明与代码块主题 |

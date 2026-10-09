@@ -64,6 +64,7 @@ Shirone 是一个使用 Astro 7、Svelte 5、Tailwind CSS 4 和 Stylus 构建的
 - 文章目录、延伸阅读、分享、加密与可选评论
 - 归档、分类、标签、友链、瞬间、番剧、相册、项目、技能、设备、游戏、系列和时间线等独立页面
 - 内置 10 种界面语言
+- 配置驱动的内容多语言：一张语言表决定路由、语言菜单、徽标与桥接页
 - SSR 优先、键盘友好，并配有无障碍测试
 - 可选集成遵循“零额外负担”原则：关闭时不会产生外部请求、DOM、布局偏移或主包代码
 
@@ -127,6 +128,7 @@ Shirone 将主题源码、个人站点内容和 npm 发布职责分离；以下�
 | 文件 | 用途 |
 | --- | --- |
 | `src/config/siteConfig.ts` | 站点网址、标识、语言、动态配色、横幅、纹理、目录和显示设置 |
+| `src/config/contentI18nConfig.ts` | 内容多语言语言表（默认语言与各语言的路由段、展示标签） |
 | `src/config/profileConfig.ts` | 作者资料与社交链接 |
 | `src/config/navBarConfig.ts` | 主导航 |
 | `src/config/sidebarConfig.ts` | 侧栏布局、挂件和页面过滤 |
@@ -197,6 +199,7 @@ pnpm build
 - [`docs/atomic-structure.md`](./docs/atomic-structure.md) - 组件分层与依赖规则
 - [`docs/markdown-extensions.md`](./docs/markdown-extensions.md) - Markdown 插件、样式、缓存与测试契约
 - [`docs/sidebar-system.md`](./docs/sidebar-system.md) - 侧栏编排与 Swup 同步
+- [`docs/content-i18n.md`](./docs/content-i18n.md) - 内容多语言路由、UI 语言解析与跨语言导航
 - [`docs/on-demand-loading.md`](./docs/on-demand-loading.md) - 可选功能的零额外负担实现
 - [`docs/font-system.md`](./docs/font-system.md) - 字体配置与生产环境子集化
 

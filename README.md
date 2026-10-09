@@ -64,6 +64,7 @@ The theme is designed for long-form writing as well as personal collections such
 - Article table of contents, related posts, sharing, encryption, and optional comments
 - Dedicated pages for archives, categories, tags, friends, moments, anime, albums, projects, skills, devices, games, series, and timelines
 - Ten built-in interface locales
+- Config-driven multi-language content: one language table drives routes, menus, badges, and bridge pages
 - SSR-first output, keyboard-friendly interactions, and accessibility testing
 - Optional integrations follow a zero-burden rule: when disabled, they add no external requests, DOM, layout shift, or main-bundle code
 
@@ -142,6 +143,7 @@ Shirone keeps theme source, personal site content, and npm publishing responsibi
 | File | Purpose |
 | --- | --- |
 | `src/config/siteConfig.ts` | Site URL, identity, locale, dynamic color, banner, texture, TOC, and display settings |
+| `src/config/contentI18nConfig.ts` | Content-language table: the default locale and each language's route segment and display label |
 | `src/config/profileConfig.ts` | Author profile and social links |
 | `src/config/navBarConfig.ts` | Main navigation |
 | `src/config/sidebarConfig.ts` | Sidebar layout, widgets, and page filters |
@@ -213,6 +215,7 @@ Use `pnpm build` as the build command and `dist` as the output directory. More d
 - [`docs/markdown-extensions.md`](./docs/markdown-extensions.md) - Markdown plugin, styling, cache, and testing contracts
 - [`docs/markdown-on-demand-loading.md`](./docs/markdown-on-demand-loading.md) - content-driven Markdown asset loading and Swup lifecycle
 - [`docs/sidebar-system.md`](./docs/sidebar-system.md) - sidebar orchestration and Swup synchronization
+- [`docs/content-i18n.md`](./docs/content-i18n.md) - multi-language content routing, UI language resolution, and cross-language navigation
 - [`docs/on-demand-loading.md`](./docs/on-demand-loading.md) - zero-burden optional features
 - [`docs/font-system.md`](./docs/font-system.md) - font configuration and production subsetting
 - [`docs/npm-package-mode.md`](./docs/npm-package-mode.md) - how the theme also runs as an npm package, and the override system

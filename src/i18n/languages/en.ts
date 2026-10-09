@@ -144,6 +144,11 @@ export const en: Translation = {
 	[Key.postRssEncryptedNotice]:
 		"This post is encrypted. Please visit the website and enter the password to read the full article.",
 
+	[Key.postAlsoAvailableIn]: "Also available in: ",
+	[Key.switchLanguage]: "Switch language",
+	[Key.postFallbackNotice]: "This post is not available in {lang}",
+	[Key.postLanguageOnlyBadge]: "{lang} only",
+
 	[Key.imageViewer]: "Image viewer",
 	[Key.openImage]: "Open image",
 	[Key.previousImage]: "Previous image",

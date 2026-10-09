@@ -19,7 +19,11 @@ interface Props {
 const { page, style } = Astro.props;
 const className = Astro.props.class;
 
-const getPageUrl = (p: number) => (p === 1 ? "/" : `/${p}/`);
+// 页码 URL 由当前页推导前缀：列表分页在非默认语言下带前缀（/zh/、/ja/2/），
+// 页码段始终是尾部纯数字段，去掉它得到列表根（/、/zh/、/ja/）。不能写死
+// `/${p}/`——那会把前缀语言的分页链到默认语言页。
+const base = page.url.current.replace(/\d+\/$/, "");
+const getPageUrl = (p: number) => (p === 1 ? base : `${base}${p}/`);
 const buildUrl = (p: number) => url(getPageUrl(p));
 
 const labels = {

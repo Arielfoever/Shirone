@@ -24,8 +24,10 @@ const style = Astro.props.style;
 
 const startOfWeek = Astro.props.widget?.startOfWeek ?? "mon";
 
-// siteConfig.lang 形如 zh_CN / en：替换为 BCP47 供 Intl 使用
-const locale = siteConfig.lang.replace("_", "-");
+// Intl 用的 BCP47 locale，跟随页面 UI 语言（locals.locale 形如 zh-CN，
+// 已是 BCP47；siteConfig.lang 形如 zh_CN / en，替换下划线后使用）：
+// 月份名与星期名要和 `/zh/*` 页面的其余文案同一语言。
+const locale = (Astro.locals.locale ?? siteConfig.lang).replace("_", "-");
 
 const { postsByDate, activeMonths } = await getCalendarData();
 ---

@@ -142,6 +142,11 @@ export const ja: Translation = {
 	[Key.postRssEncryptedNotice]:
 		"この記事は暗号化されています。Webサイトでパスワードを入力してご覧ください。",
 
+	[Key.postAlsoAvailableIn]: "この記事の他の言語版：",
+	[Key.switchLanguage]: "言語を切り替える",
+	[Key.postFallbackNotice]: "{lang}版の記事はありません",
+	[Key.postLanguageOnlyBadge]: "{lang}のみ",
+
 	[Key.imageViewer]: "画像ビューアー",
 	[Key.openImage]: "画像を開く",
 	[Key.previousImage]: "前の画像",

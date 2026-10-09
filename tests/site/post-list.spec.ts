@@ -131,6 +131,26 @@ test.describe("文章列表布局模式", () => {
 			.toBe("flex");
 	});
 
+	test("列表分页链接保留语言前缀", async ({ page }) => {
+		// 回归：Pagination 曾自算 `/${p}/`（写死默认语言），把 /zh/ 的分页
+		// 链到英文页；分页 URL 必须从 page.url.current 派生的前缀构建。
+		await page.goto("/zh/");
+		// 只取 <a>：active 页是同名 <span>（无 href）
+		const nums = page.locator(
+			".m3-blog-pagination__desktop a.m3-blog-pagination__num",
+		);
+		const hrefs = await nums.evaluateAll((as) =>
+			as.map((a) => a.getAttribute("href")),
+		);
+		expect(hrefs.length).toBeGreaterThan(1);
+		for (const href of hrefs) expect(href).toMatch(/^\/zh\/\d+\/$/);
+		expect(hrefs).toContain("/zh/2/");
+		// 移动端跳转按钮的模板同样保留前缀（{page} 占位由客户端替换）
+		const jump = page.locator(".m3-blog-pagination__jump").first();
+		await expect(jump).toHaveAttribute("data-href-template", "/zh/{page}/");
+		await expect(jump).toHaveAttribute("data-href-first", "/zh/");
+	});
+
 	test("reduced-motion：切换无 WAAPI 动画（FLIP 折叠为直接跳变）", async ({
 		page,
 	}) => {

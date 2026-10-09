@@ -1,5 +1,4 @@
 import I18nKey from "@i18n/i18nKey";
-import { i18n } from "@i18n/translation";
 import { aboutConfig } from "@/config/aboutConfig";
 import { albumsConfig } from "@/config/albumsConfig";
 import { animeConfig } from "@/config/animeConfig";
@@ -28,102 +27,107 @@ import { pruneUnavailableNavLinks } from "../utils/nav-utils.ts";
  *   同时驱动顶栏下拉菜单与全端导航抽屉。
  * 新增入口：先在 LinkPresets 登记预设，再在 navBarConfig.links 按序引用。
  *
+ * `name` 统一存 `"$t:<i18nKey>"` 引用（GitHub 这类字面量除外），**不在此
+ * 求值**：本模块在服务器启动/构建加载时执行一次，立即 `i18n()` 会把文案
+ * 冻在当时的语言上。词条由渲染方（TopAppBar / SiteNavigationDrawer）在
+ * 请求上下文内调 `resolveI18nText` 解析，导航文案因此跟随页面语言。
+ *
  * 内容仓可用 `config/nav-bar.yaml` 整体替换 `links`，写法见 `NavBarLinkOverride`。
  * 无论哪种来源，指向已关闭功能页面的入口都会在 `navBarConfig` 处被裁掉。
  */
 export const LinkPresets: Record<string, NavBarLink> = {
 	Home: {
-		name: i18n(I18nKey.home),
+		name: "$t:home",
 		url: "/",
 		icon: "material-symbols:home-outline-rounded",
 		pageKey: "home",
 	},
 	Archive: {
-		name: i18n(I18nKey.archive),
+		name: "$t:archive",
 		url: "/archive/",
 		icon: "material-symbols:archive-outline-rounded",
 		pageKey: "archive",
 	},
 	Friends: {
-		name: i18n(I18nKey.friends),
+		name: "$t:friends",
 		url: "/friends/",
 		icon: "material-symbols:handshake-outline-rounded",
 		pageKey: "friends",
 	},
 	Moments: {
-		name: i18n(I18nKey.moments),
+		name: "$t:moments",
 		url: "/moments/",
 		icon: "material-symbols:auto-awesome-outline-rounded",
 		pageKey: "moments",
 	},
 	Anime: {
-		name: i18n(I18nKey.anime),
+		name: "$t:anime",
 		url: "/anime/",
 		icon: "material-symbols:live-tv-outline-rounded",
 		pageKey: "anime",
 	},
 	Compass: {
-		name: i18n(I18nKey.compass),
+		name: "$t:compass",
 		url: "/compass/",
 		icon: "material-symbols:explore-rounded",
 		pageKey: "compass",
 	},
 	Skills: {
-		name: i18n(I18nKey.skills),
+		name: "$t:skills",
 		url: "/skills/",
 		icon: "material-symbols:workspaces-outline-rounded",
 		pageKey: "skills",
 	},
 	Projects: {
-		name: i18n(I18nKey.projects),
+		name: "$t:projects",
 		url: "/projects/",
 		icon: "material-symbols:deployed-code-outline-rounded",
 		pageKey: "projects",
 	},
 	Devices: {
-		name: i18n(I18nKey.devices),
+		name: "$t:devices",
 		url: "/devices/",
 		icon: "material-symbols:devices-rounded",
 		pageKey: "devices",
 	},
 	Games: {
-		name: i18n(I18nKey.games),
+		name: "$t:games",
 		url: "/games/",
 		icon: "material-symbols:sports-esports-outline-rounded",
 		pageKey: "games",
 	},
 	Timeline: {
-		name: i18n(I18nKey.timeline),
+		name: "$t:timeline",
 		url: "/timeline/",
 		icon: "material-symbols:timeline-rounded",
 		pageKey: "timeline",
 	},
 	Albums: {
-		name: i18n(I18nKey.albums),
+		name: "$t:albums",
 		url: "/albums/",
 		icon: "material-symbols:photo-library-outline-rounded",
 		pageKey: "albums",
 	},
 	Categories: {
-		name: i18n(I18nKey.categories),
+		name: "$t:categories",
 		url: "/categories/",
 		icon: "material-symbols:folder-outline-rounded",
 		pageKey: "categories",
 	},
 	Tags: {
-		name: i18n(I18nKey.tags),
+		name: "$t:tags",
 		url: "/tags/",
 		icon: "material-symbols:tag-rounded",
 		pageKey: "tags",
 	},
 	Series: {
-		name: i18n(I18nKey.series),
+		name: "$t:series",
 		url: "/series/",
 		icon: "material-symbols:auto-stories-outline-rounded",
 		pageKey: "series",
 	},
 	About: {
-		name: i18n(I18nKey.about),
+		name: "$t:about",
 		url: "/about/",
 		icon: "material-symbols:info-outline-rounded",
 		pageKey: "about",
@@ -147,7 +151,7 @@ const defaultNavBarConfig: NavBarConfig = {
 		LinkPresets.Compass,
 		LinkPresets.Albums,
 		{
-			name: i18n(I18nKey.more),
+			name: "$t:more",
 			icon: "material-symbols:apps-rounded",
 			children: [
 				LinkPresets.Timeline,
@@ -166,14 +170,31 @@ const defaultNavBarConfig: NavBarConfig = {
 	],
 };
 
-import { resolveI18nText } from "../utils/i18n-utils.ts";
+import { I18N_REFERENCE_PREFIX } from "../utils/i18n-utils.ts";
 
 function fail(message: string): never {
 	throw new Error(`[config] nav-bar：${message}`);
 }
 
+/**
+ * 条目名只做 `$t:` 引用格式校验，**不求值**。
+ *
+ * 词条解析推迟到渲染期（`TopAppBar` / `SiteNavigationDrawer` 的
+ * `resolveI18nText`）：本模块在服务器启动/构建加载时求值一次，立即
+ * `i18n()` 会把文案冻在当时的语言上，`/zh/*` 页面的导航就再也切不过
+ * 来。校验保留下来——内容仓写错词条必须在配置加载时立刻抛出。
+ */
 function resolveName(name: string): string {
-	return resolveI18nText(name);
+	if (name.startsWith(I18N_REFERENCE_PREFIX)) {
+		const key = name.slice(I18N_REFERENCE_PREFIX.length);
+		if (!Object.hasOwn(I18nKey, key)) {
+			fail(
+				`未知的 i18n 词条 "${key}"。可用词条见 src/i18n/i18nKey.ts；` +
+					" 若本意是普通文本，去掉开头的 $t: 即可。",
+			);
+		}
+	}
+	return name;
 }
 
 /**

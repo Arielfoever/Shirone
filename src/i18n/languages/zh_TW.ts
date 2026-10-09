@@ -136,6 +136,11 @@ export const zh_TW: Translation = {
 	[Key.postRssEncryptedNotice]:
 		"本文已加密保護，請訪問部落格網站輸入密碼閱讀全文。",
 
+	[Key.postAlsoAvailableIn]: "本文還提供：",
+	[Key.switchLanguage]: "切換語言",
+	[Key.postFallbackNotice]: "本文暫無{lang}版",
+	[Key.postLanguageOnlyBadge]: "僅有{lang}版",
+
 	[Key.imageViewer]: "圖片檢視器",
 	[Key.openImage]: "開啟圖片",
 	[Key.previousImage]: "上一張",
