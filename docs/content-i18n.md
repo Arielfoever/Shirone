@@ -30,7 +30,7 @@
 | `src/pages/[...page].astro` | 默认语言首页列表（Astro `paginate` + `postListConfig.pageSize`） |
 | `src/pages/posts/[...slug].astro` | 默认语言文章详情；缺默认语言版本的前缀语言文章在此渲染**桥接页**（见 §6a） |
 | `src/pages/[...permalink].astro` | 默认语言站根 permalink |
-| `src/pages/[locale]/[...slug].astro` | **全部非默认语言**的三分流路由：文章详情、列表分页、站根 permalink；按 `contentI18n.locales` 逐语言产出静态路径，缺本语言版本的其它语言文章渲染**桥接页**（见 §6a）。static build 只按各语言的 getStaticPaths 产出路径；dev 下它先于根路由匹配 `/2/` 但因 `NoMatchingStaticPathFound` 被 `matchAllRoutes` 跳过，落到 `[...page].astro`（Astro 7 dev 穿透机制，static 无此问题） |
+| `src/pages/[locale]/[...slug].astro` | **全部非默认语言**的四分流路由：文章详情、列表分页、站根 permalink、**数据驱动 shell 页面**（`SHELL_PAGE_ROUTES` 清单见 `src/utils/shell-routes.ts`，如 `/zh/friends/`、`/zh/moments/`——数据语言中立，前缀版差异只在 UI 文案与 `lang` / 对版）；按 `contentI18n.locales` 逐语言产出静态路径（`enable: false` 的 shell 页不产出 = 404），缺本语言版本的其它语言文章渲染**桥接页**（见 §6a）。static build 只按各语言的 getStaticPaths 产出路径；dev 下它先于根路由匹配 `/2/` 但因 `NoMatchingStaticPathFound` 被 `matchAllRoutes` 跳过，落到 `[...page].astro`（Astro 7 dev 穿透机制，static 无此问题） |
 | `src/pages/_PostDetail.astro` | 两个详情路由共享的真实文章 body（`_` 前缀 → 非路由） |
 | `src/pages/_PostFallback.astro` | 两个详情路由共享的桥接页 body（同为 `_` 前缀非路由） |
 
@@ -122,7 +122,7 @@ locales: [
 ## 9. 已知限制
 
 - 未输出 `<link rel="alternate" hreflang>` head 标签；页内语言互链由 `PostLanguageAlternates` 承担。
-- 归档、分类、标签、时间线等聚合页只有默认语言路由；它们的语言菜单对版依赖 `shellPageLanguageVersions` 的兜底推导。
+- 归档、分类、标签、系列等**文章聚合页**只有默认语言路由（`/archive/` 等；聚合语义绑定默认语言的文章列表，不适合复制多份前缀版本）；它们的语言菜单对版依赖 `shellPageLanguageVersions` 的兜底推导。数据驱动 shell 页面（`SHELL_PAGE_ROUTES`：about / albums / anime / compass / devices / friends / games / moments / projects / skills / timeline）已有前缀版本，如 `/zh/friends/`。
 - `new-post` 脚手架不生成语言配对文件。
 - 包模式下 posts 集合的 `generateId` 仍依赖 shirones 流水线跟进（`docs/packaging-contract.md` 对应行 + 其 dry run 检查）。
 
@@ -132,6 +132,7 @@ locales: [
 |---|---|
 | `src/config/contentI18nConfig.ts` | `contentI18n` / `astroI18n` 唯一真源（含语言表与增删语言指南） |
 | `src/utils/i18n-routing.ts` | id 编码、路径/前缀派生、`shellPageLanguageVersions`、请求语言解析 |
+| `src/utils/shell-routes.ts` | 数据驱动 shell 页面清单（`SHELL_PAGE_ROUTES`）与按 slug 反查（对版推导用；零外部依赖） |
 | `src/utils/post-routes.ts` | 详情/列表路由数据装配、`buildListPagePaths` |
 | `src/utils/content-utils.ts` | `prepareAllPosts` / `getSortedPosts(locale)` / `getSortedPostsForHome(locale)`、`getPostLanguageAlternates` |
 | `src/utils/url-utils.ts`、`src/utils/permalink-utils.ts` | 语言感知 URL / permalink 生成 |
@@ -141,4 +142,5 @@ locales: [
 | `src/layouts/MainGridLayout.astro` | `data-page-languages` 恒定输出 |
 | `src/components/organisms/LanguageMenu.astro`、`src/components/molecules/PostLanguageAlternates.astro` | 语言切换 UI |
 | `src/pages/[locale]/[...slug].astro`、`src/pages/posts/[...slug].astro`、`src/pages/_PostDetail.astro`、`src/pages/_PostFallback.astro` | 前缀语言分流、共享详情 body 与桥接页 body |
+| `src/pages/_<Name>.astro`（如 `_Friends.astro`） | shell 页面共享主体：顶层薄壳路由与 `[locale]` 分流共用同一实现（薄壳保留 `enable` → 404 行为） |
 | `src/config/postListConfig.ts`、`src/types/postListConfig.ts` | `languageScope` / `languageFallbackBadge` 配置 |

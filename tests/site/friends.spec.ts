@@ -11,9 +11,17 @@ import { expect, test } from "@playwright/test";
 
 const FRIEND_COUNT = 3;
 
+// 外部域请求（友链头像外链、Meting 音乐 API 等）在离线/慢网络下会让
+// goto 的 load 事件悬挂超时；测试不依赖外链资源，一律阻断（tests/AGENTS.md）。
+test.beforeEach(async ({ page }) => {
+	await page.route(/^https?:\/\/(?!localhost|127\.0\.0\.1)/, (route) =>
+		route.abort(),
+	);
+});
+
 test.describe("友链页", () => {
 	test.beforeEach(async ({ page }) => {
-		await page.goto("/friends/");
+		await page.goto("/friends/", { waitUntil: "domcontentloaded" });
 		await expect(page.locator(".friend-card")).toHaveCount(FRIEND_COUNT);
 	});
 
@@ -45,6 +53,44 @@ test.describe("友链页", () => {
 		await expect(page.locator(".page-header__subtitle")).toBeVisible();
 		await expect(page.locator(".page-header__subtitle")).toContainText(
 			"Link exchange",
+		);
+	});
+
+	test("前缀语言版本：/zh/friends/ 渲染中文 UI 并带跨语言对版", async ({
+		page,
+	}) => {
+		// 数据驱动 shell 页面（SHELL_PAGE_ROUTES）：数据语言中立，差异在
+		// UI 文案、lang 属性与语言菜单对版。
+		await page.goto("/zh/friends/");
+		await expect(page.locator(".friend-card")).toHaveCount(FRIEND_COUNT);
+		await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
+		await expect(
+			page.locator("#swup-container[data-current-page]"),
+		).toHaveAttribute("data-current-page", "friends");
+		// 语言菜单对版：两种语言的 URL 都指向 friends 页的对应前缀
+		const versions = JSON.parse(
+			(await page
+				.locator("#swup-container")
+				.getAttribute("data-page-languages")) ?? "[]",
+		);
+		expect(versions).toEqual(
+			expect.arrayContaining([
+				{ locale: "en", url: "/friends/" },
+				{ locale: "zh-CN", url: "/zh/friends/", current: true },
+			]),
+		);
+		// 默认语言版本反向对版（en 页面也认得 zh 版本）
+		await page.goto("/friends/");
+		const enVersions = JSON.parse(
+			(await page
+				.locator("#swup-container")
+				.getAttribute("data-page-languages")) ?? "[]",
+		);
+		expect(enVersions).toEqual(
+			expect.arrayContaining([
+				{ locale: "en", url: "/friends/", current: true },
+				{ locale: "zh-CN", url: "/zh/friends/" },
+			]),
 		);
 	});
 
@@ -82,7 +128,11 @@ test.describe("友链页 Swup 导航", () => {
 	test.use({ viewport: { width: 1280, height: 900 } });
 
 	test("重复进入后保持组件样式和加载指示器居中", async ({ page }) => {
-		await page.goto("/", { waitUntil: "networkidle" });
+		// 不用 networkidle：音乐 widget 的远程 Meting 请求会让它长期达不成。
+		// `load` 等组件脚本加载完（首次点击前岛已完成水合），不等远程 XHR。
+		await page.goto("/", { waitUntil: "load" });
+		const friendsLink = page.locator('#top-row a[href="/friends/"]');
+		await expect(friendsLink).toBeVisible();
 
 		for (let visit = 0; visit < 3; visit++) {
 			await page.locator('#top-row a[href="/friends/"]').click();

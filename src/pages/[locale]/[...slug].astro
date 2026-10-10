@@ -15,11 +15,35 @@ import {
 	toSlugPaths,
 	withFallbackSlugs,
 } from "@utils/post-routes";
+import { SHELL_PAGE_ROUTES } from "@utils/shell-routes";
 import type { GetStaticPaths, Page } from "astro";
+import { aboutConfig } from "@/config/aboutConfig";
+import { albumsConfig } from "@/config/albumsConfig";
+import { animeConfig } from "@/config/animeConfig";
+import { compassConfig } from "@/config/compassConfig";
+import { devicesConfig } from "@/config/devicesConfig";
+import { friendsConfig } from "@/config/friendsConfig";
+import { gamesConfig } from "@/config/gamesConfig";
+import { momentsConfig } from "@/config/momentsConfig";
 import { postListConfig } from "@/config/postListConfig";
+import { projectsConfig } from "@/config/projectsConfig";
+import { skillsConfig } from "@/config/skillsConfig";
+import { timelineConfig } from "@/config/timelineConfig";
+import type { SidebarPage } from "@/types/sidebarConfig";
 import HomeList from "../../layouts/HomeList.astro";
+import ShellAbout from "../_About.astro";
+import ShellAlbums from "../_Albums.astro";
+import ShellAnime from "../_Anime.astro";
+import ShellCompass from "../_Compass.astro";
+import ShellDevices from "../_Devices.astro";
+import ShellFriends from "../_Friends.astro";
+import ShellGames from "../_Games.astro";
+import ShellMoments from "../_Moments.astro";
 import PostDetail from "../_PostDetail.astro";
 import PostFallback from "../_PostFallback.astro";
+import ShellProjects from "../_Projects.astro";
+import ShellSkills from "../_Skills.astro";
+import ShellTimeline from "../_Timeline.astro";
 
 /**
  * 前缀语言路由：`/<route>/<slug>/` 与该语言的列表页，按 `contentI18n.locales`
@@ -27,7 +51,7 @@ import PostFallback from "../_PostFallback.astro";
  * 在 `src/pages/` 下新建同形目录（旧实现是 `zh/[...slug].astro` 目录写死）。
  *
  * `locale` 动态段的取值 = 语言表里的路由段（`route`）；同一 rest 键 `slug`
- * 承接三类参数值：
+ * 承接四类参数值：
  *
  * - 文章段 slug（与默认语言的 `/posts/<slug>/` 同源，见 `postPathFor`）；
  *   其它语言独有的文章也产出本前缀下的桥接页（`fallback: true`，
@@ -39,6 +63,10 @@ import PostFallback from "../_PostFallback.astro";
  *   硬编码为 `page`，与 `slug` 冲突，故按其源码手写同形 Page）产出
  *   `/<route>/`（第 1 页，参数值缺省）与 `/<route>/2/`……——与根
  *   `[...page]` 对称，只是数据源换成该语言的文章。
+ * - **数据驱动 shell 页面**（`SHELL_PAGE_ROUTES`：友链、说说、相册……）：
+ *   `/<route>/<slug>/` 渲染与默认语言同名页相同的私有主体（数据语言中立，
+ *   差异只在 UI 文案与 lang 属性）；功能关闭（`enable: false`）时不产出，
+ *   等价 404。文章 slug 撞 shell 页名时**文章优先**。
  *
  * 文章与 permalink 的参数值由 `toSlugPaths` 按值去重；页码值恰与某个
  * 文章 slug / permalink 撞车时**文章优先**（与 `toSlugPaths` 首条优先
@@ -52,6 +80,23 @@ import PostFallback from "../_PostFallback.astro";
  * 穿透到 404），而不是把默认语言内容塞进旧前缀。
  */
 export const getStaticPaths = (async () => {
+	// shell 页面的功能开关（按 slug 索引）：关闭的页面不产出前缀路由。
+	// 定义在函数体内——Astro 把 getStaticPaths 提取到独立 prerender chunk，
+	// 组件 frontmatter 的模块级常量不在提取范围（会 is not defined）。
+	const SHELL_PAGE_ENABLE: Record<string, boolean | undefined> = {
+		about: aboutConfig.enable,
+		albums: albumsConfig.enable,
+		anime: animeConfig.enable,
+		compass: compassConfig.enable,
+		devices: devicesConfig.enable,
+		friends: friendsConfig.enable,
+		games: gamesConfig.enable,
+		moments: momentsConfig.enable,
+		projects: projectsConfig.enable,
+		skills: skillsConfig.enable,
+		timeline: timelineConfig.enable,
+	};
+
 	// 各语言的路径装配按语言各算一次（3+ 语言时避免 N² 重复收集）。
 	const collected = new Map<
 		ContentLocale,
@@ -67,7 +112,10 @@ export const getStaticPaths = (async () => {
 
 	const paths: {
 		params: { locale: string; slug?: string };
-		props: PostRouteProps | { page: Page<CollectionEntry<"posts">> };
+		props:
+			| PostRouteProps
+			| { page: Page<CollectionEntry<"posts">> }
+			| { shell: SidebarPage };
 	}[] = [];
 
 	for (const locale of CONTENT_LOCALES) {
@@ -104,8 +152,16 @@ export const getStaticPaths = (async () => {
 				path.params.slug === undefined || !postValues.has(path.params.slug),
 		);
 
+		// 数据驱动 shell 页面：功能关闭不产出；slug 与文章撞车时文章优先。
+		const shellPaths = SHELL_PAGE_ROUTES.filter(
+			(shell) => SHELL_PAGE_ENABLE[shell.slug] && !postValues.has(shell.slug),
+		).map((shell) => ({
+			params: { locale: segment, slug: shell.slug },
+			props: { shell: shell.page },
+		}));
+
 		paths.push(
-			...[...postPaths, ...filteredListPaths].map((path) => ({
+			...[...postPaths, ...filteredListPaths, ...shellPaths].map((path) => ({
 				params: { ...path.params, locale: segment },
 				props: path.props,
 			})),
@@ -116,11 +172,29 @@ export const getStaticPaths = (async () => {
 }) satisfies GetStaticPaths;
 
 // 分流：带 entry 的是文章详情（PostRouteProps；`fallback` 标记 → 桥接页），
-// 带 page 的是列表分页。语言本身不进 props——条目 id 与 URL 前缀已足够。
+// 带 page 的是列表分页，带 shell 的是数据驱动页面。语言本身不进 props——
+// 条目 id 与 URL 前缀已足够。
 type RoutedProps = Partial<PostRouteProps> & {
 	page?: Page<CollectionEntry<"posts">>;
+	shell?: SidebarPage;
 };
-const { entry, page, fallback } = Astro.props as RoutedProps;
+const { entry, page, fallback, shell } = Astro.props as RoutedProps;
+
+/** shell 页面标识 → 共用主体组件（`_<Name>.astro` 与默认语言具名页同源）。 */
+const SHELL_COMPONENTS: Record<string, typeof ShellAbout> = {
+	about: ShellAbout,
+	albums: ShellAlbums,
+	anime: ShellAnime,
+	compass: ShellCompass,
+	devices: ShellDevices,
+	friends: ShellFriends,
+	games: ShellGames,
+	moments: ShellMoments,
+	projects: ShellProjects,
+	skills: ShellSkills,
+	timeline: ShellTimeline,
+};
+const ShellComponent = shell ? SHELL_COMPONENTS[shell] : undefined;
 ---
 
 {entry ? (
@@ -129,6 +203,8 @@ const { entry, page, fallback } = Astro.props as RoutedProps;
 	) : (
 		<PostDetail {...(Astro.props as PostRouteProps)} />
 	)
+) : page ? (
+	<HomeList page={page} />
 ) : (
-	page && <HomeList page={page} />
+	ShellComponent && <ShellComponent />
 )}

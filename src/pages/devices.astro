@@ -1,32 +1,11 @@
 ---
-/** 设备页：配置层规则在构建期结合数据层传入交互岛，路由负责开关与编排。 */
-import DeviceSection from "@components/organisms/DeviceSection.svelte";
-import I18nKey from "@i18n/i18nKey";
-import MainGridLayout from "@layouts/MainGridLayout.astro";
+/** 设备页薄壳：开关检查 + 渲染共用主体（前缀路由由 `[locale]` 承接）。 */
 import { devicesConfig } from "@/config/devicesConfig";
-import { resolveI18nText } from "@utils/i18n-utils";
-import { resolveDevicesData } from "@/utils/feature-data";
+import ShellDevices from "./_Devices.astro";
 
 if (!devicesConfig.enable) {
 	return Astro.redirect("/404/");
 }
-
-const pageTitle = resolveI18nText(devicesConfig.title, I18nKey.devices);
-const pageDescription = resolveI18nText(devicesConfig.description, I18nKey.devicesBanner);
-
-const items = resolveDevicesData(devicesConfig);
 ---
 
-<MainGridLayout
-	title={pageTitle}
-	description={pageDescription}
-	page="devices"
->
-	<DeviceSection
-		categories={devicesConfig.categories}
-		items={items}
-		title={pageTitle}
-		subtitle={pageDescription}
-		client:visible
-	/>
-</MainGridLayout>
+<ShellDevices />

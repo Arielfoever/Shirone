@@ -1,19 +1,9 @@
 ---
-import FriendSection from "@components/organisms/FriendSection.svelte";
-import I18nKey from "@i18n/i18nKey";
-import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { friendsConfig } from "@/config/friendsConfig";
-import { resolveI18nText } from "@utils/i18n-utils";
-import { getFriendsList } from "../data/friends";
-
-if (!friendsConfig.enable) {
-	return Astro.redirect("/404/");
-}
-
-const pageTitle = resolveI18nText(friendsConfig.title, I18nKey.friends);
-const pageDescription = resolveI18nText(friendsConfig.description, I18nKey.friendsBanner);
+import ShellFriends from "./_Friends.astro";
 ---
 
-<MainGridLayout title={pageTitle} description={pageDescription} page="friends">
-    <FriendSection friends={getFriendsList()} title={pageTitle} subtitle={pageDescription} client:visible></FriendSection>
-</MainGridLayout>
+<!-- 数据驱动 shell 页面（SHELL_PAGE_ROUTES）：数据语言中立，主体抽取到
+     _Friends.astro 供 [locale] 路由复用；enable=false 时 404（与 [locale]
+     的 enable 过滤一致）。 -->
+{friendsConfig.enable && <ShellFriends />}

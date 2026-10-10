@@ -1,4 +1,5 @@
 import { contentI18n } from "../config/contentI18nConfig.ts";
+import { shellPageForSlug } from "./shell-routes.ts";
 
 /**
  * 内容 i18n 路由：语言表、URL 前缀与文章 id 编码的唯一入口。
@@ -289,11 +290,13 @@ export function uiLanguagePrefixMap(): Record<string, string> {
 /**
  * 非文章页的顶栏语言菜单数据——`MainGridLayout` 在文章页之外的兜底。
  *
- * 对版规则收口在这一个函数里：**只有首页存在跨语言对版**（`/` ↔
- * `/zh/` ↔ …，由 `[locale]/[...slug]` 的分页首项与 `[...page]` 承接），
- * 其它非文章页（归档、标签、关于……）目前没有前缀语言对应路由，渲染为
- * 单版本——当前语言条目 `current`，其余语言因无版本而禁用。将来给
- * 某个列表页补上前缀路由时，只需要在这里（与首页同构地）追加对版条目。
+ * 对版规则收口在这一个函数里：**首页与数据驱动 shell 页面存在跨语言
+ * 对版**（`/` ↔ `/zh/` ↔ …，以及 `/friends/` ↔ `/zh/friends/` ↔ …，
+ * 后者由 `SHELL_PAGE_ROUTES` 清单驱动，前缀路由在 `[locale]/[...slug]`
+ * 产出）；其余非文章页（归档、分类、标签、系列……）没有前缀语言对应
+ * 路由，渲染为单版本——当前语言条目 `current`，其余语言因无版本而
+ * 禁用。将来给某个列表页补上前缀路由时，把它的 slug 加进 shell 清单
+ * （或在这里与 shell 分支同构地追加对版条目）。
  */
 export function shellPageLanguageVersions(
 	pathname: string,
@@ -311,7 +314,28 @@ export function shellPageLanguageVersions(
 	// zh 为 "/zh"）。`/zh/bilingual-posts/` 这类文章页不会走到这里
 	//（`_PostDetail` 显式传入 languageVersions），但即使走到也只会
 	// 命中非首页分支，退回单版本。
-	if (normalisedRest !== routePrefixFor(locale)) return [self];
+	if (normalisedRest !== routePrefixFor(locale)) {
+		// shell 页面对版：剥掉当前语言前缀后恰好是单个 shell 页段时，
+		// 按语言表产全量对版（`/<slug>/` ↔ `/<route>/<slug>/`）。归档、
+		// 分类、标签、系列等聚合页与列表分页没有前缀版本，保持单版本。
+		const prefix = routePrefixFor(locale);
+		const unprefixed =
+			prefix && normalisedRest.startsWith(prefix)
+				? normalisedRest.slice(prefix.length)
+				: normalisedRest;
+		const segments = unprefixed.split("/").filter(Boolean);
+		if (segments.length !== 1) return [self];
+		const shell = shellPageForSlug(segments[0]);
+		if (!shell) return [self];
+		return contentI18n.locales.map((entry) =>
+			entry.locale === locale
+				? self
+				: {
+						locale: entry.locale,
+						url: `${basePrefix}${routePrefixFor(entry.locale)}/${shell.slug}/`,
+					},
+		);
+	}
 
 	return contentI18n.locales.map((entry) =>
 		entry.locale === locale

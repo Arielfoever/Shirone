@@ -1,0 +1,22 @@
+---
+import FriendSection from "@components/organisms/FriendSection.svelte";
+import I18nKey from "@i18n/i18nKey";
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+import { resolveI18nText } from "@utils/i18n-utils";
+import { friendsConfig } from "@/config/friendsConfig";
+import { getFriendsList } from "../data/friends";
+
+/**
+ * 友链页主体（`friends.astro` 与 `[locale]/[...slug].astro` 共用）。
+ * 功能开关在调用方的路由层判断——关闭时本组件不会被渲染。
+ */
+const pageTitle = resolveI18nText(friendsConfig.title, I18nKey.friends);
+const pageDescription = resolveI18nText(
+	friendsConfig.description,
+	I18nKey.friendsBanner,
+);
+---
+
+<MainGridLayout title={pageTitle} description={pageDescription} page="friends">
+    <FriendSection friends={getFriendsList()} title={pageTitle} subtitle={pageDescription} client:visible></FriendSection>
+</MainGridLayout>

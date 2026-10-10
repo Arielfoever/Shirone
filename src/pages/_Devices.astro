@@ -1,0 +1,35 @@
+---
+/**
+ * 设备页主体（`devices.astro` 与 `[locale]/[...slug].astro` 共用）：
+ * 配置层规则在构建期结合数据层传入交互岛。
+ * 功能开关在调用方的路由层判断——关闭时本组件不会被渲染。
+ */
+import DeviceSection from "@components/organisms/DeviceSection.svelte";
+import I18nKey from "@i18n/i18nKey";
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+import { resolveI18nText } from "@utils/i18n-utils";
+import { devicesConfig } from "@/config/devicesConfig";
+import { resolveDevicesData } from "@/utils/feature-data";
+
+const pageTitle = resolveI18nText(devicesConfig.title, I18nKey.devices);
+const pageDescription = resolveI18nText(
+	devicesConfig.description,
+	I18nKey.devicesBanner,
+);
+
+const items = resolveDevicesData(devicesConfig);
+---
+
+<MainGridLayout
+	title={pageTitle}
+	description={pageDescription}
+	page="devices"
+>
+	<DeviceSection
+		categories={devicesConfig.categories}
+		items={items}
+		title={pageTitle}
+		subtitle={pageDescription}
+		client:visible
+	/>
+</MainGridLayout>

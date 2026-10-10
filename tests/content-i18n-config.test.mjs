@@ -15,8 +15,8 @@ import {
 	validateContentI18n,
 } from "../src/utils/i18n-routing.ts";
 import {
-	SHELL_PAGE_ROUTES,
 	shellPageForSlug,
+	SHELL_PAGE_ROUTES,
 } from "../src/utils/shell-routes.ts";
 
 const pagesDir = join(
@@ -196,6 +196,13 @@ test("every shell route slug has a same-named top-level page", () => {
 });
 
 test("shell pages get cross-language versions; aggregates stay single-version", () => {
+	// 对版期望按语言表动态生成（不钉死语言数量）。
+	const expected = (slug) =>
+		CONTENT_LOCALES.map((locale) => ({
+			locale,
+			url: `${routePrefixFor(locale)}/${slug}/`,
+		}));
+
 	const home = shellPageLanguageVersions("/", DEFAULT_LOCALE);
 	assert.deepEqual(
 		home.map((v) => v.url),
@@ -209,12 +216,10 @@ test("shell pages get cross-language versions; aggregates stay single-version", 
 		);
 	}
 
-	// 默认语言与前缀语言下的 shell 页都产全量对版（前缀路径按语言表推导，
-	// 不钉死默认语言）。
-	const prefixLocale = CONTENT_LOCALES.find((l) => l !== DEFAULT_LOCALE);
+	// 默认语言与前缀语言下的 shell 页都产全量对版。
 	for (const [pathname, locale] of [
 		["/friends/", DEFAULT_LOCALE],
-		[`${routePrefixFor(prefixLocale)}/friends/`, prefixLocale],
+		["/zh/friends/", "zh-CN"],
 	]) {
 		const versions = shellPageLanguageVersions(pathname, locale);
 		assert.deepEqual(
