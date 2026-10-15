@@ -17,16 +17,16 @@
  *
  * | 内容语言 | 路由段 | 展示标签 | 文章 URL |
  * |---|---|---|---|
- * | `en`（默认） | `en` | English | `/posts/<slug>/` |
- * | `zh-CN` | `zh` | 简体中文 | `/zh/<slug>/` |
+ * | `zh-CN`（默认） | `zh` | 简体中文 | `/posts/<slug>/` |
+ * | `en` | `en` | English | `/en/<slug>/` |
  *
  * 三套命名刻意分开：
  *
- * - **路由段**（`en` / `zh`）：URL 首段、`i18n.locales` 条目，也是
+ * - **路由段**（`zh` / `en`）：URL 首段、`i18n.locales` 条目，也是
  *   `src/pages/[locale]/` 动态路由里 `locale` 参数的取值；
- * - **内容语言**（`en` / `zh-CN`）：内容文件后缀（`index.zh-CN.md`）、
+ * - **内容语言**（`zh-CN` / `en`）：内容文件后缀（`index.en.md`）、
  *   frontmatter `lang`、`hreflang` 与 `Content-Language` 用的 BCP 47 标签；
- * - **展示标签**（`English` / `简体中文`）：语言自称（endonym），顶栏语言菜单、
+ * - **展示标签**（`简体中文` / `English`）：语言自称（endonym），顶栏语言菜单、
  *   「本文还提供」互链、语言徽标与桥接页提示直接显示它——语言名描述的是
  *   「那个语言本身」，不随站点 UI 语言翻译，所以不占 `I18nKey` 词典，
  *   十个 locale 模块也不必登记同值副本。
@@ -45,10 +45,10 @@
  * 入口 fail-fast 报错。
  */
 export const contentI18n = {
-	defaultLocale: "en",
+	defaultLocale: "zh-CN",
 	locales: [
-		{ locale: "en", route: "en", label: "English" },
 		{ locale: "zh-CN", route: "zh", label: "简体中文" },
+		{ locale: "en", route: "en", label: "English" },
 	],
 } as const;
 
