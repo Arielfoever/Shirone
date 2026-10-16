@@ -348,4 +348,9 @@ export const es: Translation = {
 		"Añade esta URL a tu lector RSS/Atom favorito (como NetNewsWire, Feedly, Inoreader o Follow) para recibir actualizaciones.",
 	[Key.feedOpenXml]: "Ver XML original",
 	[Key.feedRecentPosts]: "Artículos recientes del canal",
+
+	// 顶栏其他站
+	[Key.ourSiteLog]: "业余无线电日志平台",
+	[Key.ourSiteDisk]: "星路云盘",
+	[Key.ourSubSite]: "子站",
 };

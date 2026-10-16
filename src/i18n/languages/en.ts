@@ -346,4 +346,9 @@ export const en: Translation = {
 		"Add this feed URL to your favorite RSS/Atom reader (e.g. NetNewsWire, Feedly, Inoreader, Follow) to get instant updates.",
 	[Key.feedOpenXml]: "View Raw XML",
 	[Key.feedRecentPosts]: "Recent Posts in Feed",
+
+	// 顶栏其他站
+	[Key.ourSiteLog]: "Amateur Radio Log Service",
+	[Key.ourSiteDisk]: "StarRoad Disk",
+	[Key.ourSubSite]: "Subsite",
 };

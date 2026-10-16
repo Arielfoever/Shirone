@@ -342,6 +342,11 @@ enum I18nKey {
 	feedHowToUseDesc = "feedHowToUseDesc",
 	feedOpenXml = "feedOpenXml",
 	feedRecentPosts = "feedRecentPosts",
+
+	// 顶栏其他站
+	ourSiteLog = "ourSiteLog",
+	ourSiteDisk = "ourSiteDisk",
+	ourSubSite = "ourSubSite",
 }
 
 export default I18nKey;

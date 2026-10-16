@@ -348,4 +348,9 @@ export const vi: Translation = {
 		"Thêm URL nguồn cấp ở trên vào trình đọc RSS/Atom yêu thích của bạn (như NetNewsWire, Feedly, Inoreader, Follow) để nhận thông báo bài viết mới.",
 	[Key.feedOpenXml]: "Xem XML gốc",
 	[Key.feedRecentPosts]: "Bài viết mới nhất trong nguồn cấp",
+
+	// 顶栏其他站
+	[Key.ourSiteLog]: "业余无线电日志平台",
+	[Key.ourSiteDisk]: "星路云盘",
+	[Key.ourSubSite]: "子站",
 };

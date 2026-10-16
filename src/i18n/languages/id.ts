@@ -351,4 +351,9 @@ export const id: Translation = {
 		"Tambahkan URL umpan di atas ke pembaca RSS/Atom favorit Anda (seperti NetNewsWire, Feedly, Inoreader, Follow) untuk menerima pembaruan.",
 	[Key.feedOpenXml]: "Lihat XML Asli",
 	[Key.feedRecentPosts]: "Artikel Terbaru di Umpan",
+
+	// 顶栏其他站
+	[Key.ourSiteLog]: "业余无线电日志平台",
+	[Key.ourSiteDisk]: "星路云盘",
+	[Key.ourSubSite]: "子站",
 };

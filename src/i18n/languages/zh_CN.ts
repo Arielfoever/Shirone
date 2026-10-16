@@ -334,4 +334,9 @@ export const zh_CN: Translation = {
 		"将上方订阅地址添加到任意 RSS/Atom 阅读器（如 NetNewsWire、Feedly、Inoreader、Follow 等），即可即时接收新文章推送。",
 	[Key.feedOpenXml]: "查看原始 XML",
 	[Key.feedRecentPosts]: "最新推送文章",
+
+	// 顶栏其他站
+	[Key.ourSiteLog]: "业余无线电日志平台",
+	[Key.ourSiteDisk]: "星路云盘",
+	[Key.ourSubSite]: "子站",
 };
