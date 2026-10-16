@@ -50,6 +50,9 @@ importers:
       '@fontsource/roboto':
         specifier: ^5.3.0
         version: 5.3.0
+      '@iconify-json/boxicons':
+        specifier: ^1.2.0
+        version: 1.2.0
       '@iconify-json/fa7-regular':
         specifier: ^1.2.3
         version: 1.2.3
@@ -1330,6 +1333,9 @@ packages:
 
   '@formatjs/intl-localematcher@0.6.2':
     resolution: {integrity: sha512-XOMO2Hupl0wdd172Y06h6kLpBz6Dv+J4okPLl4LPtzbr8f66WbIoy4ev98EBuZ6ZK4h5ydTN6XneT4QVpD7cdA==}
+
+  '@iconify-json/boxicons@1.2.0':
+    resolution: {integrity: sha512-yAfCVaiZ5t2bC1xNVEdkWUI94e3u15IrytO2XFh8/7Y45M1i51adQpi42OhH2pUdsYM0/KY4Gklrb+XB+oZS/w==, tarball: https://registry.npmjs.org/@iconify-json/boxicons/-/boxicons-1.2.0.tgz}
 
   '@iconify-json/fa7-brands@1.2.4':
     resolution: {integrity: sha512-60acXyxhQl1lddBH5YGzfQLkzlP9jqNcblFmgel7lJpgsVx/4QmrXAL90ARb8XhHX7dFMGRDmlqER9mq8aaz2g==}
@@ -8012,6 +8018,10 @@ snapshots:
   '@formatjs/intl-localematcher@0.6.2':
     dependencies:
       tslib: 2.8.1
+
+  '@iconify-json/boxicons@1.2.0':
+    dependencies:
+      '@iconify/types': 2.0.0
 
   '@iconify-json/fa7-brands@1.2.4':
     dependencies:
